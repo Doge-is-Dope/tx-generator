@@ -9,7 +9,7 @@ from langchain_google_vertexai import ChatVertexAI
 @lru_cache(maxsize=4)
 def get_embedding(provider: str = "openai") -> Embeddings:
     normalized_provider = provider.strip().lower()
-    chat_models = {
+    embeddings = {
         "openai": OpenAIEmbeddings(
             # text-embedding-3-large
             # text-embedding-3-small
@@ -17,9 +17,9 @@ def get_embedding(provider: str = "openai") -> Embeddings:
         )
     }
     try:
-        return chat_models[normalized_provider]
+        return embeddings[normalized_provider]
     except KeyError:
-        raise ValueError(f"Provider must be one of: {', '.join(chat_models.keys())}")
+        raise ValueError(f"Provider must be one of: {', '.join(embeddings.keys())}")
 
 
 @lru_cache(maxsize=4)
