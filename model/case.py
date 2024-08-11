@@ -3,7 +3,7 @@ from .tx import Tx
 
 
 class Case(BaseModel):
-    case_id: str = Field(description="A unique identifier for this case.")
+    id: str = Field(description="A unique identifier for this case.")
     description: str = Field(
         description="A detailed description outlining the context and purpose of the case."
     )

@@ -1,11 +1,12 @@
 from langchain_chroma import Chroma
 from case.case_loader import get_case_doc_loader
-from utils.model_selector import get_embedding
+from utils.model_selector import get_embedding, get_chat_model
 
-file_path = "data/case_gpt-4o.jsonl"
-loader = get_case_doc_loader(file_path)
+
+model_name = get_chat_model().model_name
+loader = get_case_doc_loader(f"data/case_{model_name}.jsonl")
 docs = loader.load()
-embedding_model = get_embedding("openai")
+embedding_model = get_embedding()
 db = Chroma.from_documents(documents=docs, embedding=embedding_model)
 
 
@@ -16,7 +17,7 @@ def get_retriever():
 if __name__ == "__main__":
     import json
 
-    retriever = get_retriever("../data/case_gpt-4o.jsonl")
+    retriever = get_retriever()
     query = "Stake ETH with Lido and deposit to Eigenpie"
     results = retriever.invoke(query)
     print(f"[0] page_content: {results[0].page_content}")

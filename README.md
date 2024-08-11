@@ -10,6 +10,12 @@ GITHUB_ACCESS_TOKEN=
 GOOGLE_APPLICATION_CREDENTIALS=PATH_TO_GOOGLE_APPLICATION_CREDENTIALS
 ```
 
+Choose your preferred provider from the following options: `openai`, `anthropic`, or `google`.
+
+```plaintext
+MODEL_PROVIDER=
+```
+
 ### Data
 
 - data: Data used for retrieving/training

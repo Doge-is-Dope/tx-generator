@@ -1,4 +1,5 @@
 from functools import lru_cache
+
 from langchain_core.language_models import BaseChatModel
 from langchain_core.embeddings import Embeddings
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -6,9 +7,17 @@ from langchain_anthropic import ChatAnthropic
 from langchain_google_vertexai import ChatVertexAI
 
 
+def _get_provider() -> str:
+    import os
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    return os.getenv("MODEL_PROVIDER", "openai")
+
+
 @lru_cache(maxsize=4)
-def get_embedding(provider: str = "openai") -> Embeddings:
-    normalized_provider = provider.strip().lower()
+def get_embedding() -> Embeddings:
+    normalized_provider = _get_provider().strip().lower()
     embeddings = {
         "openai": OpenAIEmbeddings(
             # text-embedding-3-large
@@ -23,13 +32,14 @@ def get_embedding(provider: str = "openai") -> Embeddings:
 
 
 @lru_cache(maxsize=4)
-def get_chat_model(provider: str = "openai", temperature: float = 0.3) -> BaseChatModel:
-    normalized_provider = provider.strip().lower()
+def get_chat_model(temperature: float = 0.3) -> BaseChatModel:
+    normalized_provider = _get_provider().strip().lower()
     chat_models = {
         "openai": ChatOpenAI(
             # gpt-4o-mini
+            # gpt-4o
             # gpt-4o-2024-08-06
-            model="gpt-4o-2024-08-06",
+            model="gpt-4o-mini",
             temperature=temperature,
         ),
         "anthropic": ChatAnthropic(

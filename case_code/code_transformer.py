@@ -29,9 +29,13 @@ async def process_document(
         skipped_files[TransformError.NotFoundError].append(meta_str)
         return
     try:
+        # Run the chain on the document
         result = await chain.ainvoke(doc.page_content)
+        # Add the source metadata to the result
+        rd = result.dict()
+        rd["source"] = meta_str
         with open(output_path, "a") as f:
-            f.write(json.dumps(result.dict()) + "\n")
+            f.write(json.dumps(rd) + "\n")
     except Exception:
         skipped_files[TransformError.ParseError].append(meta_str)
 
@@ -57,7 +61,7 @@ async def transform(
                 1. Use the user-provided code snippets to create a structured output.
                 2. The steps are typically detailed in the `previewTx` field.
                 3. Ensure that the number of steps in the `previewTx` matches the number specified in the `txn_count`.
-                4. If the data cannot be parsed, set it to `unknown`
+                4. If the data cannot be parsed, set it to `unknown`.
                 Follow these rules to provide accurate responses.
                 """,
             ),
