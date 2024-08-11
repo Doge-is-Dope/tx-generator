@@ -3,13 +3,17 @@ from .tx import Tx
 
 
 class Case(BaseModel):
-    case_id: str = Field(description="Unique identifier for the case.")
-    description: str = Field(description="A brief description of the case.")
-    total_steps: int = Field(description="The total transaction count of the case.")
-    steps: list[Tx] = Field(description="Each step represents a transaction.")
+    case_id: str = Field(description="A unique identifier for this case.")
+    description: str = Field(
+        description="A detailed description outlining the context and purpose of the case."
+    )
+    total_steps: int = Field(
+        description="The total number of transactions of the case."
+    )
+    steps: list[Tx] = Field(
+        description="A sequential list of transactions (Tx) that are part of the case, where each step corresponds to a single transaction."
+    )
 
 
 class CaseOutput(BaseModel):
-    cases: list[Case] = Field(
-        description="List of cases. This could be empty if no cases are found."
-    )
+    cases: list[Case] = Field(description="A list containing multiple case instances.")
