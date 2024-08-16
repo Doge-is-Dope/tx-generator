@@ -39,7 +39,7 @@ def get_chat_model(temperature: float = 0.3) -> BaseChatModel:
             # gpt-4o-mini
             # gpt-4o
             # gpt-4o-2024-08-06
-            model="gpt-4o-mini",
+            model="gpt-4o-2024-08-06",
             temperature=temperature,
         ),
         "anthropic": ChatAnthropic(
