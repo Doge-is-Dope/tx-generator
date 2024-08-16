@@ -9,6 +9,7 @@ class Assistant:
     def __call__(self, state: State, config: RunnableConfig):
         while True:
             configuration = config.get("configurable", {})
+            # Retrieve the user account from the configuration.
             user_account = configuration.get("user_account", None)
             if not user_account:
                 print("No user account found.")

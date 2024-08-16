@@ -18,8 +18,7 @@ python = "^3.11"
 python-dotenv = "^1.0.1"
 tqdm = "^4.66.4"
 jq = "^1.7.0"
-
-
+web3 = "^6.20.1"
 
 [build-system]
 requires = ["poetry-core"]
