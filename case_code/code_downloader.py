@@ -7,13 +7,11 @@ from tqdm import tqdm
 from typing import Dict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-
-OUTPUT_DIR = "raw_data/"
-METADATA_OUTPUT_PATH = "metadata.json"
+from case_code import OUTPUT_DIR, RAW_OUTPUT_DIR, METADATA_OUTPUT_PATH
 
 
 class CodeDownloader:
-    def __init__(self, is_dev: bool = True, output_dir: str = OUTPUT_DIR):
+    def __init__(self, is_dev: bool = True, output_dir: str = RAW_OUTPUT_DIR):
         load_dotenv()
         self.is_dev: bool = is_dev
         self.access_token: str = os.getenv("GITHUB_ACCESS_TOKEN")
@@ -123,7 +121,7 @@ class CodeDownloader:
 
 
 def get_metadata():
-    file_path = os.path.join(OUTPUT_DIR, METADATA_OUTPUT_PATH)
+    file_path = os.path.join(RAW_OUTPUT_DIR, METADATA_OUTPUT_PATH)
     if not os.path.exists(file_path):
         raise FileNotFoundError("Not found. Call CodeDownloader().download() first.")
     with open(file_path, "r") as f:

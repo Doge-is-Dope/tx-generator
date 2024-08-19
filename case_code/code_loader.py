@@ -5,6 +5,8 @@ from typing import List, Iterator
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 
+from case_code import RAW_OUTPUT_DIR
+
 
 class CodeLoader(BaseLoader):
     """
@@ -37,7 +39,7 @@ class CodeLoader(BaseLoader):
         return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
-        case_dir_path = "raw_data/cases"
+        case_dir_path = f"{RAW_OUTPUT_DIR}/cases"
         file_pattern = os.path.join(case_dir_path, "**", "*")
         for file_path in glob.iglob(file_pattern, recursive=True):
             if os.path.isfile(file_path):

@@ -13,6 +13,8 @@ from models import CaseOutput
 from case_code.code_downloader import get_metadata
 from utils.model_selector import get_chat_model
 
+from case_code import RAW_OUTPUT_DIR, OUTPUT_DIR, CASES_PATH
+
 
 class TransformMetadata(Enum):
     TotalCases = "Total cases"
@@ -48,11 +50,9 @@ async def process_document(
 
 
 async def transform(
-    loader: BaseLoader,
-    model: BaseChatModel = get_chat_model(),
-    output_dir: str = "data",
+    loader: BaseLoader, model: BaseChatModel = get_chat_model()
 ) -> Dict[TransformMetadata, int]:
-    output_path = f"{output_dir}/case_{model.model_name}.jsonl"
+    output_path = f"{OUTPUT_DIR}/case_{model.model_name}.jsonl"
     # Ensure the output directory exists
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
@@ -60,14 +60,14 @@ async def transform(
         [
             (
                 "system",
-                """You are a blockchain expert with extensive knowledge in TypeScript and blockchain transactions. 
-                Your task is to generate a structured output by following these specific guidelines.
-                RULES:
-                1. Use the user-provided code snippets to create a structured output.
-                2. The steps are typically detailed in the `previewTx` field.
-                3. Ensure that the number of steps in the `previewTx` matches the number specified in the `txn_count`.
-                4. If the data cannot be parsed, set it to `unknown`.
-                Follow these rules to provide accurate responses.""",
+                """You are a blockchain expert with extensive knowledge in TypeScript and blockchain transactions.\
+Your task is to generate a structured output by following these specific guidelines.\
+RULES:\
+1. Use the user-provided code snippets to create a structured output.
+2. The steps are typically detailed in the `previewTx` field.
+3. Ensure that the number of steps in the `previewTx` matches the number specified in the `txn_count`.
+4. If the data cannot be parsed, set it to `unknown`.
+Follow these rules to provide accurate responses.""",
             ),
             ("human", "{code}"),
         ]
@@ -103,7 +103,7 @@ def get_transformation_result():
     import pandas as pd
 
     # Read the CSV file into a DataFrame
-    csv_file = "raw_data/cases.csv"
+    csv_file = f"{RAW_OUTPUT_DIR}/{CASES_PATH}"
     df = pd.read_csv(csv_file)
 
     # Initialize model and JSONL file path
