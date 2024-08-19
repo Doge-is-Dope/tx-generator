@@ -8,7 +8,8 @@ from langchain_core.document_loaders import BaseLoader
 from langchain_core.runnables import RunnablePassthrough, Runnable
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.language_models import BaseChatModel
-from model import Case
+
+from models import Case
 
 
 class TransformError(Enum):
