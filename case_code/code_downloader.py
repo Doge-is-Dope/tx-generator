@@ -63,10 +63,11 @@ class CodeDownloader:
         file_info = response.json()
         self._download_file(file_info, path)
 
-    def _download_metadata(self):
+    def _download_metadata(self, total_downloads: int) -> None:
         """Download the metadata file from the repository."""
         import json
         import time
+        import csv
 
         env = "dev" if self.is_dev else "release"
         url = f"https://bento-batch-{env}.netlify.app/case/api/meta"
@@ -78,13 +79,20 @@ class CodeDownloader:
         # Sort the cases by id alphabetically
         metadata["cases"] = cases_sorted = sorted(cases, key=lambda case: case["id"])
         metadata["total_cases"] = len(cases_sorted)
+        metadata["total_downloads"] = total_downloads
         metadata["last_updated"] = int(time.time())
 
-        # Write the metadata to a file
+        # Write the metadata to a file in 'raw_data/'
         with open(os.path.join(self.output_dir, METADATA_OUTPUT_PATH), "w") as f:
             json.dump(metadata, f)
 
-    def download(self) -> int:
+        with open(os.path.join(self.output_dir, "cases.csv"), "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(["id", "transformable"])
+            for case in cases_sorted:
+                writer.writerow([case["id"], False])
+
+    def download(self) -> None:
         """Download the source code for all Bento cases from the repository."""
         case_paths = self._get_case_path()
         base_url = f"{self.github_api_url}/repos/{self.repo}/contents"
@@ -92,9 +100,6 @@ class CodeDownloader:
         # Check if output directory exists
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
-
-        # Download metadata
-        self._download_metadata()
 
         # Use a session for requests
         with requests.Session() as session:
@@ -113,11 +118,15 @@ class CodeDownloader:
                 ):
                     future.result()
 
-        return len(case_paths)
+        # Download metadata
+        self._download_metadata(total_downloads=len(case_paths))
 
 
 def get_metadata():
-    with open(f"{OUTPUT_DIR}{METADATA_OUTPUT_PATH}", "r") as f:
+    file_path = os.path.join(OUTPUT_DIR, METADATA_OUTPUT_PATH)
+    if not os.path.exists(file_path):
+        raise FileNotFoundError("Not found. Call CodeDownloader().download() first.")
+    with open(file_path, "r") as f:
         metadata = json.load(f)
     return metadata
 
