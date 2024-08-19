@@ -4,11 +4,16 @@ import json
 import base64
 from dotenv import load_dotenv
 from tqdm import tqdm
+from typing import Dict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
+OUTPUT_DIR = "raw_data/"
+METADATA_OUTPUT_PATH = "metadata.json"
+
+
 class CodeDownloader:
-    def __init__(self, is_dev: bool = True, output_dir: str = "raw_data/"):
+    def __init__(self, is_dev: bool = True, output_dir: str = OUTPUT_DIR):
         load_dotenv()
         self.is_dev: bool = is_dev
         self.access_token: str = os.getenv("GITHUB_ACCESS_TOKEN")
@@ -58,23 +63,29 @@ class CodeDownloader:
         file_info = response.json()
         self._download_file(file_info, path)
 
-    def _download_meta(self):
+    def _download_metadata(self):
         """Download the metadata file from the repository."""
         import json
+        import time
 
         env = "dev" if self.is_dev else "release"
         url = f"https://bento-batch-{env}.netlify.app/case/api/meta"
         response = requests.get(url)
         response.raise_for_status()
         cases = response.json()["cases"]
+
+        metadata: Dict = {}
         # Sort the cases by id alphabetically
-        cases_sorted = sorted(cases, key=lambda case: case["id"])
+        metadata["cases"] = cases_sorted = sorted(cases, key=lambda case: case["id"])
+        metadata["total_cases"] = len(cases_sorted)
+        metadata["last_updated"] = int(time.time())
+
         # Write the metadata to a file
-        with open(os.path.join(self.output_dir, "meta.json"), "w") as f:
-            json.dump(cases_sorted, f)
+        with open(os.path.join(self.output_dir, METADATA_OUTPUT_PATH), "w") as f:
+            json.dump(metadata, f)
 
     def download(self) -> int:
-        """Download all bento cases from the repository."""
+        """Download the source code for all Bento cases from the repository."""
         case_paths = self._get_case_path()
         base_url = f"{self.github_api_url}/repos/{self.repo}/contents"
 
@@ -83,7 +94,7 @@ class CodeDownloader:
             os.makedirs(self.output_dir)
 
         # Download metadata
-        self._download_meta()
+        self._download_metadata()
 
         # Use a session for requests
         with requests.Session() as session:
@@ -97,7 +108,7 @@ class CodeDownloader:
                 for future in tqdm(
                     as_completed(futures),
                     total=len(case_paths),
-                    desc="Downloading files",
+                    desc=f"Downloading {self.branch} branch files",
                     unit="file",
                 ):
                     future.result()
@@ -106,21 +117,21 @@ class CodeDownloader:
 
 
 def get_metadata():
-    with open("raw_data/meta.json", "r") as f:
-        cases = json.load(f)
-
-    metadata = {
-        case["id"]: {
-            "chain_id": case["chain_id"],
-            "preview_txn_count": case["preview_txn_count"],
-        }
-        for case in cases
-    }
+    with open(f"{OUTPUT_DIR}{METADATA_OUTPUT_PATH}", "r") as f:
+        metadata = json.load(f)
     return metadata
 
 
 if __name__ == "__main__":
-    downloader = CodeDownloader(is_dev=True)
+    downloader = CodeDownloader(is_dev=False)
     downloader.download()
 
-    print(f"Case amount in metadata: {len(get_metadata())}")
+    metadata = get_metadata()
+    print(f"{'Total cases:':<14} {metadata['total_cases']}")
+
+    from datetime import datetime
+
+    # Convert timestamp to datetime object
+    dt_obj = datetime.fromtimestamp(metadata["last_updated"])
+    readable_str = dt_obj.strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{'Last updated:':<14} {readable_str}")
