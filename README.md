@@ -2,21 +2,21 @@
 
 Create a `.env` file in the root directory of the project and add the following environment variables:
 
-```plaintext
+```bash
+# For LangSmith tracing
 LANGCHAIN_API_KEY=
+
+# AI providers
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
-GITHUB_ACCESS_TOKEN=
-GOOGLE_APPLICATION_CREDENTIALS=PATH_TO_GOOGLE_APPLICATION_CREDENTIALS
+GOOGLE_APPLICATION_CREDENTIALS=Path_to_google_credentials.json
+
+# Model provider: openai, anthropic, google
+MODEL_PROVIDER=openai
 ```
 
-Choose your preferred provider from the following options: `openai`, `anthropic`, or `google`.
+### Data processing
 
-```plaintext
-MODEL_PROVIDER=
-```
+All of the processed data is stored in the `data` folder.
 
-### Data
-
-- data: Data used for retrieving/training
-- raw_data: Raw data from Bento Batch. i.e. source code.
+- `data/raw`: Raw data from Bento Batch. i.e. source code.
