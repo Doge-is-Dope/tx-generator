@@ -3,10 +3,7 @@ __pycache__/
 .venv/
 .env
 
-# Include the source code
-raw_data/
-
-# Data for RAG
+# Data. e.g. raw data and transformed data
 data/
 
 # For Google Vertex AI

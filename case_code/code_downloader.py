@@ -7,7 +7,7 @@ from tqdm import tqdm
 from typing import Dict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from case_code import OUTPUT_DIR, RAW_OUTPUT_DIR, METADATA_OUTPUT_PATH
+from case_code import RAW_DIR, CASE_METADATA_PATH
 
 
 class CodeDownloader:
@@ -15,7 +15,7 @@ class CodeDownloader:
     Download the source code (`.ts` files) for all Bento cases from the repository.
     """
 
-    def __init__(self, is_dev: bool = True, output_dir: str = RAW_OUTPUT_DIR):
+    def __init__(self, is_dev: bool = True, output_dir: str = RAW_DIR):
         load_dotenv()
         self.is_dev: bool = is_dev
         self.access_token: str = os.getenv("GITHUB_ACCESS_TOKEN")
@@ -65,7 +65,7 @@ class CodeDownloader:
         file_info = response.json()
         self._download_file(file_info, path)
 
-    def _download_metadata(self, total_downloads: int) -> None:
+    def _download_metadata(self, total_files: int) -> None:
         """Download the metadata file."""
         import json
         import time
@@ -81,18 +81,12 @@ class CodeDownloader:
         # Sort the cases by id alphabetically
         metadata["cases"] = cases_sorted = sorted(cases, key=lambda case: case["id"])
         metadata["total_cases"] = len(cases_sorted)
-        metadata["total_downloads"] = total_downloads
+        metadata["total_files"] = total_files
         metadata["last_updated"] = int(time.time())
 
-        # Write the metadata to a file in 'raw_data/'
-        with open(os.path.join(self.output_dir, METADATA_OUTPUT_PATH), "w") as f:
+        # Write the metadata
+        with open(CASE_METADATA_PATH, "w") as f:
             json.dump(metadata, f)
-
-        with open(os.path.join(self.output_dir, "cases.csv"), "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(["id", "transformable"])
-            for case in cases_sorted:
-                writer.writerow([case["id"], False])
 
     def download(self) -> None:
         """Download the source code for all Bento cases from the repository."""
@@ -121,14 +115,13 @@ class CodeDownloader:
                     future.result()
 
         # Download metadata
-        self._download_metadata(total_downloads=len(case_paths))
+        self._download_metadata(total_files=len(case_paths))
 
 
 def get_metadata():
-    file_path = os.path.join(RAW_OUTPUT_DIR, METADATA_OUTPUT_PATH)
-    if not os.path.exists(file_path):
+    if not os.path.exists(CASE_METADATA_PATH):
         raise FileNotFoundError("Not found. Call CodeDownloader().download() first.")
-    with open(file_path, "r") as f:
+    with open(CASE_METADATA_PATH, "r") as f:
         metadata = json.load(f)
     return metadata
 
@@ -139,6 +132,7 @@ if __name__ == "__main__":
 
     metadata = get_metadata()
     print(f"{'Total cases:':<14} {metadata['total_cases']}")
+    print(f"{'Total files:':<14} {metadata['total_files']}")
 
     from datetime import datetime
 

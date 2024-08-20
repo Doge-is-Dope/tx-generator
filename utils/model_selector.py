@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.language_models import BaseChatModel
 from langchain_core.embeddings import Embeddings
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -31,24 +32,39 @@ def get_embedding() -> Embeddings:
         raise ValueError(f"Provider must be one of: {', '.join(embeddings.keys())}")
 
 
+class ChatModelProvider(BaseModel):
+    model: BaseChatModel
+    name: str
+
+
 @lru_cache(maxsize=4)
-def get_chat_model(temperature: float = 0.3) -> BaseChatModel:
-    normalized_provider = _get_provider().strip().lower()
+def get_chat_model(
+    provider: str | None = None,
+    temperature: float = 0,
+) -> ChatModelProvider:
+    normalized_provider = provider or _get_provider().strip().lower()
+
+    # gpt-4o-mini
+    # gpt-4o
+    # gpt-4o-2024-08-06
+    openai_model = "gpt-4o-mini"
+    # claude-3-5-sonnet-20240620
+    anthropic_model = "claude-3-5-sonnet-20240620"
+    # gemini-1.5-pro
+    google_model = "gemini-1.5-pro"
+
     chat_models = {
-        "openai": ChatOpenAI(
-            # gpt-4o-mini
-            # gpt-4o
-            # gpt-4o-2024-08-06
-            model="gpt-4o-mini",
-            temperature=temperature,
+        "openai": ChatModelProvider(
+            model=ChatOpenAI(model=openai_model, temperature=temperature),
+            name=openai_model,
         ),
-        "anthropic": ChatAnthropic(
-            model="claude-3-5-sonnet-20240620",
-            temperature=temperature,
+        "anthropic": ChatModelProvider(
+            model=ChatAnthropic(model=anthropic_model, temperature=temperature),
+            name=anthropic_model,
         ),
-        "google": ChatVertexAI(
-            model="gemini-1.5-pro",
-            temperature=temperature,
+        "google": ChatModelProvider(
+            model=ChatVertexAI(model=google_model, temperature=temperature),
+            name=google_model,
         ),
     }
     try:

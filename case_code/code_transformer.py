@@ -2,18 +2,19 @@ import os
 import json
 from enum import Enum
 from typing import Dict
+import time
 from tqdm.asyncio import tqdm_asyncio
 from langchain_core.documents import Document
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.runnables import RunnablePassthrough, Runnable
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.language_models import BaseChatModel
 
-from models import CaseOutput
 from case_code.code_downloader import get_metadata
-from utils.model_selector import get_chat_model
+from models.case import CaseOutput
+from utils.model_selector import ChatModelProvider, get_chat_model
 
-from case_code import RAW_OUTPUT_DIR, OUTPUT_DIR, CASES_PATH
+
+from case_code import CASE_TRANSFORMED_PATH, CASE_METADATA_PATH, CASE_STATS_PATH
 
 
 class TransformMetadata(Enum):
@@ -50,7 +51,9 @@ async def process_document(
 
 
 async def transform(
-    loader: BaseLoader, model: BaseChatModel = get_chat_model()
+    loader: BaseLoader,
+    model_provider: ChatModelProvider = get_chat_model(),
+    save_stats: bool = True,
 ) -> Dict[TransformMetadata, int]:
     """
     Asynchronously transform code documents into structured case outputs.
@@ -68,7 +71,8 @@ async def transform(
         including total cases processed, cases not found, and parse errors.
     """
 
-    output_path = f"{OUTPUT_DIR}/case_{model.model_name}.jsonl"
+    # Set the output path based on the model name
+    output_path = CASE_TRANSFORMED_PATH.format(model=model_provider.name)
     # Ensure the output directory exists
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
@@ -91,49 +95,81 @@ Follow these rules to provide accurate responses.""",
     chain = (
         {"code": RunnablePassthrough()}
         | prompt
-        | model.with_structured_output(CaseOutput)
+        | model_provider.model.with_structured_output(CaseOutput)
     )
 
     # Check if the file exists, and delete it if it does
     if os.path.exists(output_path):
         os.remove(output_path)
 
-    transform_metadata: Dict[TransformMetadata, int] = {}
-    transform_metadata[TransformMetadata.TotalCases] = 0
-    transform_metadata[TransformMetadata.NotFoundError] = 0
-    transform_metadata[TransformMetadata.ParseError] = 0
+    transform_stats: Dict[TransformMetadata, int] = {}
+    transform_stats[TransformMetadata.TotalCases] = 0
+    transform_stats[TransformMetadata.NotFoundError] = 0
+    transform_stats[TransformMetadata.ParseError] = 0
 
     # Get the total number of downloads
-    total = get_metadata()["total_downloads"]
+    total = get_metadata()["total_files"]
 
     print("Start processing files...")
     async for doc in tqdm_asyncio(
         loader.alazy_load(), desc="Processing files", unit="file", total=total
     ):
-        await process_document(doc, chain, output_path, transform_metadata)
+        await process_document(doc, chain, output_path, transform_stats)
 
-    return transform_metadata
+    if save_stats:
+        save_transformed_stats()
+
+    return transform_stats
 
 
-def get_transformation_result():
-    import pandas as pd
-
-    # Read the CSV file into a DataFrame
-    csv_file = f"{RAW_OUTPUT_DIR}/{CASES_PATH}"
-    df = pd.read_csv(csv_file)
-
+def save_transformed_stats():
     # Initialize model and JSONL file path
     model = get_chat_model()
-    jsonl_file = f"data/case_{model.model_name}.jsonl"
+    jsonl_file = CASE_TRANSFORMED_PATH.format(model=model.name)
 
     # Extract case IDs from the JSONL file
     with open(jsonl_file, "r") as file:
-        case_ids = {json.loads(line)["id"] for line in file if "id" in json.loads(line)}
+        transformed_cases = {
+            json.loads(line)["id"] for line in file if "id" in json.loads(line)
+        }
 
-    # Update the 'transformable' column based on whether 'id' is in case_ids
-    df["transformable"] = df["id"].isin(case_ids) | df["transformable"]
+    # Read case_metadata.json
+    with open(CASE_METADATA_PATH, "r") as file:
+        metadata = json.load(file)
+        metadata_cases = [case["id"] for case in metadata["cases"]]
 
-    # Save the updated DataFrame back to the CSV file
-    df.to_csv(csv_file, index=False)
+    stats = {}
+    # Last updated date
+    stats["last_updated"] = int(time.time())
+    # Total number of cases
+    stats["total_cases"] = metadata["total_cases"]
+    # Total number of failed cases
+    stats["total_failed_cases"] = 0
+    # Create a list of cases with their transformable status
+    stats["cases"] = []
+    for case in metadata_cases:
+        transformable = case in transformed_cases
+        stats["cases"].append({"id": case, "transformable": transformable})
+        if not transformable:
+            stats["total_failed_cases"] += 1
 
+    # Save the stats to a JSON file
+    with open(CASE_STATS_PATH.format(model=model.name), "w") as file:
+        json.dump(stats, file)
+
+    return stats
+
+
+def get_transformed_stats():
+    import pandas as pd
+
+    model = get_chat_model()
+
+    with open(CASE_STATS_PATH.format(model=model.name), "r") as file:
+        stats = json.load(file)
+    data = {
+        "Title": ["total_cases", "total_failed_cases"],
+        "Count": [stats["total_cases"], stats["total_failed_cases"]],
+    }
+    df = pd.DataFrame(data)
     return df

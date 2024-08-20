@@ -3,7 +3,7 @@ from case.case_loader import get_case_doc_loader
 from utils.model_selector import get_embedding, get_chat_model
 
 
-model_name = get_chat_model().model_name
+model_name = get_chat_model().name
 loader = get_case_doc_loader(f"data/case_{model_name}.jsonl")
 docs = loader.load()
 embedding_model = get_embedding()

@@ -1,11 +1,10 @@
 import os
 import glob
-import asyncio
 from typing import List, Iterator
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 
-from case_code import RAW_OUTPUT_DIR
+from case_code import RAW_DIR
 
 
 class CodeLoader(BaseLoader):
@@ -39,7 +38,7 @@ class CodeLoader(BaseLoader):
         return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
-        case_dir_path = f"{RAW_OUTPUT_DIR}/cases"
+        case_dir_path = os.path.join(RAW_DIR, "cases")
         file_pattern = os.path.join(case_dir_path, "**", "*")
         for file_path in glob.iglob(file_pattern, recursive=True):
             if os.path.isfile(file_path):
@@ -61,5 +60,7 @@ async def async_code_loader():
 
 
 if __name__ == "__main__":
+    import asyncio
+
     loader = CodeLoader()
     asyncio.run(async_code_loader())
