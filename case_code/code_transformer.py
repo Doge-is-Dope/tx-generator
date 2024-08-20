@@ -52,6 +52,22 @@ async def process_document(
 async def transform(
     loader: BaseLoader, model: BaseChatModel = get_chat_model()
 ) -> Dict[TransformMetadata, int]:
+    """
+    Asynchronously transform code documents into structured case outputs.
+
+    This function processes documents loaded by the given loader, uses a language model
+    to interpret the code, and saves the structured outputs to a JSONL file.
+
+    Args:
+        loader (BaseLoader): The document loader to use for fetching code documents.
+        model (BaseChatModel, optional): The chat model to use for code interpretation.
+            Defaults to the model returned by get_chat_model().
+
+    Returns:
+        Dict[TransformMetadata, int]: A dictionary containing metadata about the transformation process,
+        including total cases processed, cases not found, and parse errors.
+    """
+
     output_path = f"{OUTPUT_DIR}/case_{model.model_name}.jsonl"
     # Ensure the output directory exists
     os.makedirs(os.path.dirname(output_path), exist_ok=True)

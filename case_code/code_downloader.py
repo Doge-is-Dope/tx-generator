@@ -11,6 +11,10 @@ from case_code import OUTPUT_DIR, RAW_OUTPUT_DIR, METADATA_OUTPUT_PATH
 
 
 class CodeDownloader:
+    """
+    Download the source code (`.ts` files) for all Bento cases from the repository.
+    """
+
     def __init__(self, is_dev: bool = True, output_dir: str = RAW_OUTPUT_DIR):
         load_dotenv()
         self.is_dev: bool = is_dev
@@ -62,7 +66,7 @@ class CodeDownloader:
         self._download_file(file_info, path)
 
     def _download_metadata(self, total_downloads: int) -> None:
-        """Download the metadata file from the repository."""
+        """Download the metadata file."""
         import json
         import time
         import csv
