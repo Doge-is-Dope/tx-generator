@@ -150,14 +150,14 @@ def save_transformed_stats(duration: int):
     # Total number of cases
     stats["total_cases"] = metadata["total_cases"]
     # Total number of failed cases
-    stats["total_failed_cases"] = 0
+    stats["failed_cases"] = 0
     # Create a list of cases with their transformable status
     stats["cases"] = []
     for case in metadata_cases:
         transformable = case in transformed_cases
         stats["cases"].append({"id": case, "transformable": transformable})
         if not transformable:
-            stats["total_failed_cases"] += 1
+            stats["failed_cases"] += 1
     # Save the stats to a JSON file
     with open(CASE_STATS_PATH.format(model=model.name), "w") as file:
         json.dump(stats, file)
