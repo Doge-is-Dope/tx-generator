@@ -1,7 +1,7 @@
 import os
 import json
 from enum import Enum
-from typing import Dict
+from typing import Dict, Optional
 import time
 from tqdm.asyncio import tqdm_asyncio
 from langchain_core.documents import Document
@@ -11,7 +11,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from case_code.code_downloader import get_metadata
 from models.case import CaseOutput
-from utils.model_selector import ChatModelProvider, get_chat_model
+from utils.model_selector import ChatModelProvider, get_chat_model, model_names
 
 
 from case_code import CASE_TRANSFORMED_PATH, CASE_METADATA_PATH, CASE_STATS_PATH
@@ -110,12 +110,12 @@ Follow these rules to provide accurate responses.""",
     # Get the total number of downloads
     total = get_metadata()["total_files"]
 
-    print("Start processing files...")
+    print(f"Start transforming with {model_provider.name}...")
 
     start_time = int(time.time())
 
     async for doc in tqdm_asyncio(
-        loader.alazy_load(), desc="Processing files", unit="file", total=total
+        loader.alazy_load(), desc="Transforming", unit="file", total=total
     ):
         await process_document(doc, chain, output_path, transform_stats)
 
@@ -165,9 +165,21 @@ def save_transformed_stats(duration: int):
     return stats
 
 
-def get_transformed_stats():
-    model = get_chat_model()
+def get_transformed_stats(model_name: Optional[str] = None):
+    name = model_name or get_chat_model().name
 
-    with open(CASE_STATS_PATH.format(model=model.name), "r") as file:
+    with open(CASE_STATS_PATH.format(model=name), "r") as file:
         stats = json.load(file)
+    return stats
+
+
+def get_all_transformed_stats():
+    stats = {}
+    names = [name for names in model_names.values() for name in names]
+    for name in names:
+        file_path = CASE_STATS_PATH.format(model=name)
+        if os.path.exists(file_path):
+            with open(file_path, "r") as file:
+                model_stats = json.load(file)
+                stats[name] = model_stats
     return stats

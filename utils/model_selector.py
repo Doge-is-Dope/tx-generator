@@ -37,37 +37,50 @@ class ChatModelProvider(BaseModel):
     name: str
 
 
+# List of supported models for each provider.
+# The first model is the default one.
+model_names = {
+    "openai": [
+        "gpt-4o-mini",
+        "gpt-4o",
+        "gpt-4o-2024-08-06",
+    ],
+    "anthropic": [
+        "claude-3-5-sonnet-20240620",
+    ],
+    "google": [
+        "gemini-1.5-pro",
+        "gemini-1.0-pro",
+        # gemini-1.5-flash (not supported)
+    ],
+}
+
+
 @lru_cache(maxsize=4)
 def get_chat_model(
     provider: str | None = None,
     temperature: float = 0,
 ) -> ChatModelProvider:
     normalized_provider = provider or _get_provider().strip().lower()
-
-    # gpt-4o-mini
-    # gpt-4o
-    # gpt-4o-2024-08-06
-    openai_model = "gpt-4o-mini"
-    # claude-3-5-sonnet-20240620
-    anthropic_model = "claude-3-5-sonnet-20240620"
-    # gemini-1.5-pro
-    google_model = "gemini-1.5-pro"
-
-    chat_models = {
-        "openai": ChatModelProvider(
-            model=ChatOpenAI(model=openai_model, temperature=temperature),
-            name=openai_model,
-        ),
-        "anthropic": ChatModelProvider(
-            model=ChatAnthropic(model=anthropic_model, temperature=temperature),
-            name=anthropic_model,
-        ),
-        "google": ChatModelProvider(
-            model=ChatVertexAI(model=google_model, temperature=temperature),
-            name=google_model,
-        ),
-    }
     try:
+        # Use the first model as default
+        model_name = model_names[normalized_provider][0]
+        chat_models = {
+            "openai": ChatModelProvider(
+                model=ChatOpenAI(model=model_name, temperature=temperature),
+                name=model_name,
+            ),
+            "anthropic": ChatModelProvider(
+                model=ChatAnthropic(model=model_name, temperature=temperature),
+                name=model_name,
+            ),
+            "google": ChatModelProvider(
+                model=ChatVertexAI(model=model_name, temperature=temperature),
+                name=model_name,
+            ),
+        }
         return chat_models[normalized_provider]
     except KeyError:
-        raise ValueError(f"Provider must be one of: {', '.join(chat_models.keys())}")
+        raise ValueError(
+            f"Provider must be one of the following: {', '.join(model_names.keys())}"
+        )
