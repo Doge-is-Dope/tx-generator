@@ -111,18 +111,22 @@ Follow these rules to provide accurate responses.""",
     total = get_metadata()["total_files"]
 
     print("Start processing files...")
+
+    start_time = int(time.time())
+
     async for doc in tqdm_asyncio(
         loader.alazy_load(), desc="Processing files", unit="file", total=total
     ):
         await process_document(doc, chain, output_path, transform_stats)
 
+    duration = int(time.time()) - start_time
     if save_stats:
-        save_transformed_stats()
+        save_transformed_stats(duration)
 
     return transform_stats
 
 
-def save_transformed_stats():
+def save_transformed_stats(duration: int):
     # Initialize model and JSONL file path
     model = get_chat_model()
     jsonl_file = CASE_TRANSFORMED_PATH.format(model=model.name)
@@ -141,6 +145,8 @@ def save_transformed_stats():
     stats = {}
     # Last updated date
     stats["last_updated"] = int(time.time())
+    # Total time taken to transform
+    stats["total_time_taken"] = duration
     # Total number of cases
     stats["total_cases"] = metadata["total_cases"]
     # Total number of failed cases
@@ -152,7 +158,6 @@ def save_transformed_stats():
         stats["cases"].append({"id": case, "transformable": transformable})
         if not transformable:
             stats["total_failed_cases"] += 1
-
     # Save the stats to a JSON file
     with open(CASE_STATS_PATH.format(model=model.name), "w") as file:
         json.dump(stats, file)
@@ -161,15 +166,8 @@ def save_transformed_stats():
 
 
 def get_transformed_stats():
-    import pandas as pd
-
     model = get_chat_model()
 
     with open(CASE_STATS_PATH.format(model=model.name), "r") as file:
         stats = json.load(file)
-    data = {
-        "Title": ["total_cases", "total_failed_cases"],
-        "Count": [stats["total_cases"], stats["total_failed_cases"]],
-    }
-    df = pd.DataFrame(data)
-    return df
+    return stats
