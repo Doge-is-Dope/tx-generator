@@ -1,9 +1,10 @@
 import os
 import json
+import time
 from enum import Enum
 from typing import Dict, Optional
-import time
 from tqdm.asyncio import tqdm_asyncio
+
 from langchain_core.documents import Document
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.runnables import RunnablePassthrough, Runnable
@@ -166,6 +167,7 @@ def save_transformed_stats(duration: int):
 
 
 def get_transformed_stats(model_name: Optional[str] = None):
+    """Get the stats of the transformed cases for a given model."""
     name = model_name or get_chat_model().name
 
     with open(CASE_STATS_PATH.format(model=name), "r") as file:
@@ -174,6 +176,7 @@ def get_transformed_stats(model_name: Optional[str] = None):
 
 
 def get_all_transformed_stats():
+    """Get the stats of the transformed cases for all models."""
     stats = {}
     names = [name for names in model_names.values() for name in names]
     for name in names:
@@ -183,3 +186,15 @@ def get_all_transformed_stats():
                 model_stats = json.load(file)
                 stats[name] = model_stats
     return stats
+
+
+def sort_transformed_cases(model_name: Optional[str] = None):
+    """Sort the transformed cases for a given model."""
+    name = model_name or get_chat_model().name
+    file_path = CASE_TRANSFORMED_PATH.format(model=name)
+    with open(file_path, "r") as file:
+        lines = [json.loads(line) for line in file]
+    sorted_lines = sorted(lines, key=lambda x: x["id"])
+    with open(file_path, "w") as file:
+        for line in sorted_lines:
+            file.write(json.dumps(line) + "\n")
