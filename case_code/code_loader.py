@@ -17,16 +17,16 @@ class CodeLoader(BaseLoader):
 
         with open("raw_data/meta.json", "r") as f:
             cases = json.load(f)
-            # Transform the list of dictionaries into the desired dictionary format
+            # Convert the list of dictionaries into the desired dictionary format
 
-        transformed_data = {
+        converted_data = {
             case["id"]: {
                 "chain_id": case["chain_id"],
                 "preview_txn_count": case["preview_txn_count"],
             }
             for case in cases
         }
-        return transformed_data
+        return converted_data
 
     def _extract_case_name(self, file_path: str) -> tuple[str, str]:
         path_components = file_path.split(os.sep)

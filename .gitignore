@@ -3,7 +3,7 @@ __pycache__/
 .venv/
 .env
 
-# Data. e.g. raw data and transformed data
+# Data. e.g. raw data and converted data
 data/
 
 # For Google Vertex AI
