@@ -4,21 +4,22 @@ version = "0.1.0"
 description = ""
 authors = ["clement.l <maple3312936@outlook.com>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
-langchain = "^0.2.9"
-langchain-chroma = "^0.1.2"
-langchain-community = "^0.2.7"
-langchain-anthropic = "^0.1.20"
-langchain-openai = "^0.1.17"
-langchain-google-vertexai = "^1.0.7"
-langgraph = "^0.2.3"
+jq = "^1.7.0"
+langchain = "^0.2.15"
+langchain-chroma = "^0.1.3"
+langchain-community = "^0.2.15"
+langchain-anthropic = "^0.1.23"
+langchain-openai = "^0.1.23"
+langchain-google-vertexai = "^1.0.10"
+langgraph = "^0.2.15"
 pandas = "^2.2.2"
 python = "^3.11"
 python-dotenv = "^1.0.1"
-tqdm = "^4.66.4"
-jq = "^1.7.0"
-web3 = "^6.20.1"
+tqdm = "^4.66.5"
+web3 = "^7.2.0"
 
 [build-system]
 requires = ["poetry-core"]
