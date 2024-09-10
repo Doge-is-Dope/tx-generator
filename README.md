@@ -29,3 +29,10 @@ All of the processed data is stored in the `data` folder.
    2.2. Generate the corresponding transactions.
    2.3. Map the description to the generated transactions.
 3. Return result: Return the list of steps and transactions.
+
+### Implemented tools
+
+- `abi/fetch_contract_abi`: Fetch the ABI of a contract
+- `address/convert_to_checksum_address`: Convert an address to a checksum address
+- `address/resolve_ens`: Resolve an ENS name to an address
+- `address/get_contract_address_by_name`: Get the contract address by name
