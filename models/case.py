@@ -22,12 +22,20 @@ class BatchCase(BaseModel):
     description: str = Field(
         description="A comprehensive description providing context, background, and the purpose of the batch case."
     )
-    # total_steps: int = Field(
-    #     description="The total number of transactions included in this case."
-    # )
     steps: list[Transaction] = Field(
         description="A sequential list of transactions (Tx), where each step represents to a single transaction."
     )
+
+    def get_pretty_str(self):
+        """
+        Returns a pretty string representation of the batch case.
+        """
+        steps_str = "\n".join(
+            [f"{i+1}. {step.description}" for i, step in enumerate(self.steps)]
+        )
+        return (
+            f"Case ID: {self.id}\nDescription: {self.description}\nSteps:\n{steps_str}"
+        )
 
 
 class CaseOutput(BaseModel):
