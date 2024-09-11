@@ -73,10 +73,6 @@ def fetch_contract_abi(
     return _fetch_abi_from_remote(contract_address, function_name)
 
 
-from typing import Optional, Literal
-from functools import lru_cache
-
-
 # Optimized function
 @lru_cache
 def _fetch_cached_abi(
