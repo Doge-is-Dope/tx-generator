@@ -15,20 +15,39 @@ GOOGLE_APPLICATION_CREDENTIALS=Path_to_google_credentials.json
 MODEL_PROVIDER=openai
 ```
 
+### Intent processing
+
+1. Receive User Intent
+
+   - Input: Natural language prompt (e.g., "Stake 0.03 ETH with Lido and deposit to Eigenpie.")
+   - Task: Translate the user’s intent into concrete steps.
+   - Output: List of steps (e.g., "Stake 0.03 ETH to Lido", "Approve stETH to Eigenpie", "Stake stETH to Eigenpie")
+
+2. Simulate Transactions (Per Step)
+
+   - Input: Each step from the previous phase (e.g., "Stake 0.03 ETH to Lido")
+   - Task: For each step, convert it into appropriate transaction parameters and simulate the transaction to ensure feasibility.
+   - Output: Simulated results, including whether the step succeeded or failed, and any necessary adjustments.
+
+3. Refine and Update Steps
+
+   - Input: Results from simulation
+   - Task: Refine each step as needed based on the simulation results.
+     - If the simulation fails (e.g., invalid parameters), adjust the parameters.
+     - If the step passes simulation, mark it as successful.
+   - Output: Updated steps, ready to be presented to the user.
+
+4. Return Results to User
+
+   - Input: Finalized steps.
+   - Task: Return the list of steps and their associated transaction parameters to the user.
+   - Output: A object containing the steps and their associated transaction details.
+
 ### Data processing
 
 All of the processed data is stored in the `data` folder.
 
 - `data/raw`: Raw data from Bento Batch. i.e. source code.
-
-### Intent processing
-
-1. Intent conversion: Convert the raw intent into a list of steps.
-2. Step conversion: Convert the list of steps into a list of transaction parameters.
-   2.1. Simulate each step to check if it's valid.
-   2.2. Generate the corresponding transactions.
-   2.3. Map the description to the generated transactions.
-3. Return result: Return the list of steps and transactions.
 
 ### Implemented tools
 
