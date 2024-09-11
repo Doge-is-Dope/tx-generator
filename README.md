@@ -43,6 +43,40 @@ MODEL_PROVIDER=openai
    - Task: Return the list of steps and their associated transaction parameters to the user.
    - Output: A object containing the steps and their associated transaction details.
 
+### Example
+
+```json
+{
+  "description": "Stake 0.03 ETH with Lido and deposit to Eigenpie",
+  "steps": [
+    {
+      "description": "Stake 0.03 ETH to Lido",
+      "tx_params": {
+        "to": "0x0",
+        "value": "0x0",
+        "data": "0x0"
+      }
+    },
+    {
+      "description": "Approve stETH to Eigenpie",
+      "tx_params": {
+        "to": "0x0",
+        "value": "0x0",
+        "data": "0x0"
+      }
+    },
+    {
+      "description": "Stake stETH to Eigenpie",
+      "tx_params": {
+        "to": "0x0",
+        "value": "0x0",
+        "data": "0x0"
+      }
+    }
+  ]
+}
+```
+
 ### Data processing
 
 All of the processed data is stored in the `data` folder.
