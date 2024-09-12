@@ -26,16 +26,11 @@ class BatchCase(BaseModel):
         description="A sequential list of transactions (Tx), where each step represents to a single transaction."
     )
 
-    def get_pretty_str(self):
-        """
-        Returns a pretty string representation of the batch case.
-        """
+    def __str__(self) -> str:
         steps_str = "\n".join(
-            [f"{i+1}. {step.description}" for i, step in enumerate(self.steps)]
+            f"{i+1}. {step.description}" for i, step in enumerate(self.steps)
         )
-        return (
-            f"Case ID: {self.id}\nDescription: {self.description}\nSteps:\n{steps_str}"
-        )
+        return f"ID: {self.id}\nDescription: {self.description}\nSteps:\n{steps_str}"
 
 
 class CaseOutput(BaseModel):
