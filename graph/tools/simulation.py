@@ -17,10 +17,10 @@ from langchain_core.pydantic_v1 import BaseModel, Field, validator
 
 
 class TransactionParams(BaseModel):
-    from_address: str = Field(description="The sender address")
-    to_address: str = Field(description="The receiver address")
-    data: str = Field(description="The data of the transaction")
-    value: str = Field(description="The value of native token to send")
+    from_address: str = Field(description="The address of the sender (from)")
+    to_address: str = Field(description="The address being interacted with (to)")
+    data: str = Field("0x", description="Transaction data in hex, start with '0x'")
+    value: str = Field("0x0", description="Amount of native token to send, in hex")
 
     @validator("from_address", "to_address")
     def check_address_format(cls, v):
