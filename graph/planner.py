@@ -1,8 +1,5 @@
 import os
 
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "planner"
-
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
@@ -10,6 +7,8 @@ from langchain_openai import ChatOpenAI
 from case.case_retriever import get_retriever
 from models.case import BatchCase
 
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_PROJECT"] = "planner"
 
 system_prompt = """
 You are an expert case generator specializing in EVM blockchain transactions. Your task is to convert a description into the simplest possible set of actionable steps.
