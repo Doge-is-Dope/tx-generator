@@ -20,6 +20,23 @@ from graph.tools import w3
 
 
 class TransactionParams(BaseModel):
+    """
+    Parameters for a blockchain transaction.
+
+    Attributes:
+        from_address (str): Sender's address, must start with '0x' and be 42 characters long.
+        to_address (str): Recipient's address or contract address, must start with '0x' and be 42 characters long.
+        data (str): Transaction data in hexadecimal format, must start with '0x'.
+        value (str): Native token amount in hexadecimal format, must start with '0x'.
+
+    Validation:
+        - Addresses (`from_address`, `to_address`) must be valid hex strings starting with '0x' and 42 characters in length.
+        - `value` and `data` must start with '0x'.
+
+    Purpose:
+        Ensures correct formatting of transaction parameters before submission to the blockchain.
+    """
+
     from_address: str = Field(description="The address of the sender (from)")
     to_address: str = Field(description="The address being interacted with (to)")
     data: str = Field("0x", description="Transaction data in hex, start with '0x'")
@@ -58,48 +75,71 @@ class AssetChange(BaseModel):
 
 
 class TransactionResult(BaseModel):
-    """The result of a single transaction."""
+    """
+    The result of a single transaction.
 
-    # The address that initiated this transaction. Should match SimulationResult's from_address.
-    from_address: str = ""
-    # The address that the transaction is sent to
-    to_address: str = ""
-    asset_changes: List[AssetChange] = []
-    error: str = ""
+    Attributes:
+        from_address (str): The address that initiated the transaction. Should match the `from_address` in the SimulationResult.
+        to_address (str): The address that the transaction was sent to.
+        asset_changes (List[AssetChange]): A list of asset changes (transfers, token movements) that occurred due to the transaction.
+        error (str, default=''): Error message, if the transaction encountered any issues. Defaults to an empty string if no error occurred.
+
+    Purpose:
+        This class captures the outcome of a transaction, including the initiator, recipient, any asset changes, and potential errors.
+    """
+
+    from_address: str = Field(
+        "", description="The address that initiated the transaction"
+    )
+    to_address: str = Field(
+        "", description="The address that the transaction was sent to"
+    )
+    asset_changes: List[AssetChange] = Field(
+        [], description="List of asset changes that occurred due to the transaction"
+    )
+    error: str = Field(
+        "", description="Error message, if the transaction encountered any issues"
+    )
 
     def pretty_print(self):
-        # Determine the transaction status
-        status = "Successful" if not self.error else "Failed"
-        print(f"Status: {status}")
-        # Append error message if exists
+        from decimal import Decimal
+
+        # Print error message if the transaction failed
         if self.error:
             print(f"Error: {self.error}")
 
         from_address = self.from_address.lower()
 
-        # Process asset changes
+        # Iterate over asset changes
         for asset_change in self.asset_changes:
             is_sender = asset_change.sender.lower() == from_address
             is_receiver = asset_change.receiver.lower() == from_address
 
-            # Validate that sender and receiver are not the same
+            # Ensure the sender and receiver are not the same
             if is_sender and is_receiver:
-                raise Exception("Sender and receiver shall not be the same")
+                raise ValueError("Sender and receiver cannot be the same")
 
-            # Determine transaction sign and format message
-            outgoing_sign = "💸" if is_sender else "💰"
+            # Determine transaction direction (outgoing/incoming)
+            transaction_sign = "-" if is_sender else "+"
+            contract_address = (
+                f"({asset_change.contract_address})"
+                if asset_change.contract_address
+                else ""
+            )
             raw_amount_dec = int(asset_change.raw_amount, 16)
-            formatted_amount = "{:.18f}".format(
-                raw_amount_dec / 10**asset_change.decimals
+            formatted_amount = Decimal(raw_amount_dec) / Decimal(
+                10**asset_change.decimals
             )
-            asset_type = asset_change.contract_address or "Native"
-            info_message = (
-                f"{outgoing_sign} {asset_change.symbol.upper()} ({asset_type})\n"
-                f"- Raw (Hex): {asset_change.raw_amount}\n"
-                f"- Raw (Dec): {raw_amount_dec:,}\n"
-                f"- Formatted: {formatted_amount}"
+            formatted_amount_str = (
+                "{:f}".format(formatted_amount).rstrip("0").rstrip(".")
             )
-            print(info_message)
+
+            asset_symbol = asset_change.symbol.upper()
+            print(
+                f"Amount: {transaction_sign}{formatted_amount_str} {asset_symbol} {contract_address or ''}\n"
+                f"- Hex: {asset_change.raw_amount}\n"
+                f"- Decimal: {raw_amount_dec:_}"
+            )
 
 
 class SimulationResult(BaseModel):
@@ -119,9 +159,10 @@ class SimulationResult(BaseModel):
 
     def pretty_print(self):
         for i, tx_result in enumerate(self.tx_results):
-            print(f"#{i + 1}")
+            status = "Successful" if not tx_result.error else "Failed"
+            print(f"#{i + 1}: {status}")
             tx_result.pretty_print()
-            print("-------------------------------------")
+            print("-" * 40)
 
 
 @tool
@@ -229,67 +270,3 @@ def _format_simulation_result(sender: str, results: list[dict]) -> SimulationRes
         )
 
     return SimulationResult(from_address=sender, tx_results=tx_results)
-
-
-if __name__ == "__main__":
-    import time
-    import json
-    from web3 import Web3
-
-    dummy_from_address = "0x2d4d2A025b10C09BDbd794B4FCe4F7ea8C7d7bB4"
-    dummy_to_address = "0x8c575b178927fF9A70804B8b4F7622F7666bB360"
-    usdt_address = "0xdAC17F958D2ee523a2206206994597C13D831ec7"
-    usdc_address = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-    uniswap_v2_router_address = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
-
-    with open("abi/erc20.json") as file:
-        erc20_abi = json.load(file)
-
-    with open("abi/uniswap_v2_router.json") as file:
-        uniswap_v2_router_abi = json.load(file)
-
-    usdc_contract = w3.eth.contract(abi=erc20_abi)
-    uniswap_contract = w3.eth.contract(abi=uniswap_v2_router_abi)
-
-    # Approve 1000000 USDC to Uniswap V2 Router
-    approve_encoded_data = usdc_contract.encode_abi(
-        "approve", args=[uniswap_v2_router_address, 1_000_000]
-    )
-
-    # Swap 1000000 USDC to USDT
-    swap_encoded_data = uniswap_contract.encode_abi(
-        "swapExactTokensForTokens",
-        [
-            1_000_000,
-            0,
-            [usdc_address, usdt_address],
-            dummy_from_address,
-            int(time.time()) + 500,
-        ],
-    )
-
-    result = simulate_transaction.invoke(
-        {
-            "transactions": [
-                TransactionParams(
-                    from_address=dummy_from_address,
-                    to_address=usdc_address,
-                    data=approve_encoded_data,
-                    value="0x0",
-                ),
-                TransactionParams(
-                    from_address=dummy_from_address,
-                    to_address=uniswap_v2_router_address,
-                    data=swap_encoded_data,
-                    value="0x0",
-                ),
-                TransactionParams(
-                    from_address=dummy_from_address,
-                    to_address=dummy_to_address,
-                    data="0x",
-                    value="0x7b",
-                ),
-            ]
-        }
-    )
-    result.pretty_print()
