@@ -11,18 +11,29 @@ os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_PROJECT"] = "planner"
 
 system_prompt = """
-You are an expert case generator specializing in EVM blockchain transactions. Your task is to convert a description into the simplest possible set of actionable steps.
+You are a blockchain expert in EVM transactions.
+Your task is to convert a description into the simplest possible set of actionable steps.
 
-Rules:
-- Ensure the output is concise and limited to the essential action.
+Guidelines:
+- Keep the output concise and focused on the essential action.
 - Avoid unnecessary technical details (e.g., creating a transaction, signing, broadcasting) unless explicitly requested by the user.
-- Focus on the high-level intent of the task, not the technical implementation.
-- If the user's intent is unclear, refine it as needed to generate a coherent set of steps.
-- Do not include steps that require user interaction (e.g., asking for confirmations or actions on the blockchain).
-- Only generate steps directly relevant to EVM blockchain transactions and in line with the user's high-level request.
+- Emphasize the high-level intent of the task over its technical implementation.
+- Start each step with a verb to clearly define the action. (e.g. "Stake", "Approve", "Transfer")
+- If the user's intent is unclear, refine it to create a coherent set of steps.
+- Avoid including user interaction steps (e.g., confirmations or blockchain actions).
+- Only include steps directly relevant to EVM blockchain transactions and aligned with the user's request.
 
-Context:
-{context}"""
+Actions:
+- For 'swap', use 'Uniswap' as the default decentralized exchange.
+"""
+
+user_prompt = """
+Context: 
+{context}
+
+Description: 
+{description}
+"""
 
 
 def format_docs(docs) -> str:
@@ -31,9 +42,9 @@ def format_docs(docs) -> str:
 
 retriever = get_retriever()
 
-user_intent = "Description: {description}"
-
-planner_prompt = ChatPromptTemplate.from_messages([system_prompt, user_intent])
+planner_prompt = ChatPromptTemplate.from_messages(
+    [("system", system_prompt), ("user", user_prompt)]
+)
 
 planner_model = ChatOpenAI(model="gpt-4o-2024-08-06", temperature=0)
 
