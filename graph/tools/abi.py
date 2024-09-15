@@ -3,15 +3,12 @@ import requests
 import json
 
 from functools import lru_cache
-from typing import Optional, Literal, List
-from web3 import Web3
+from typing import Optional, List
 from langchain_core.tools import tool
 
-from .address import convert_to_checksum_address
+from graph.tools import w3
+from graph.tools.address import convert_to_checksum_address
 
-
-INFURA_API_KEY = os.getenv("INFURA_API_KEY")
-w3 = Web3(Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_API_KEY}"))
 # Global cache for ABIs
 _ABI_CACHE = {
     "erc20": None,
@@ -37,6 +34,29 @@ def _load_abi_files():
 
 
 _load_abi_files()  # Load the ABIs once when the module is loaded
+
+
+@tool
+def encode_function_call(abi: list, function_name: str, args: list) -> str:
+    """
+    Encode a smart contract function call into ABI-encoded data.
+
+    This function takes the relevant function's ABI, the name of the function to call, and its arguments,
+    and then returns the ABI-encoded data that can be included in the transaction's data field.
+
+    Args:
+        abi (str): The ABI of the contract in JSON format.
+        function_name (str): The name of the contract function to call (e.g., 'approve').
+        args (list): The arguments to the function as a list (e.g., [spender_address, amount]).
+
+    Returns:
+        str: The ABI-encoded data for the function call that can be used in a transaction.
+
+    Example:
+        data = encode_function_call(abi, 'approve', ['0xUniswapContractAddress', 400])
+    """
+    contract = w3.eth.contract(abi=abi)
+    return contract.encode_abi(function_name, args)
 
 
 @tool

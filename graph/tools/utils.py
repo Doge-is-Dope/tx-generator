@@ -1,24 +1,41 @@
-from langchain_core.messages import ToolMessage
-from langchain_core.runnables import RunnableLambda
+import time
 
-from langgraph.prebuilt import ToolNode
-
-
-def handle_tool_error(state) -> dict:
-    error = state.get("error")
-    tool_calls = state["messages"][-1].tool_calls
-    return {
-        "messages": [
-            ToolMessage(
-                content=f"Error: {repr(error)}\n please fix your mistakes.",
-                tool_call_id=tc["id"],
-            )
-            for tc in tool_calls
-        ]
-    }
+from langchain_core.tools import tool
 
 
-def create_tool_node_with_fallback(tools: list) -> dict:
-    return ToolNode(tools).with_fallbacks(
-        [RunnableLambda(handle_tool_error)], exception_key="error"
-    )
+@tool
+def convert_dec_to_hex(integer: int) -> str:
+    """
+    Convert an decimal integer to a hexadecimal string.
+
+    Args:
+        integer (int): The integer to be converted.
+
+    Returns:
+        str: The hexadecimal representation of the input integer, prefixed with '0x'.
+
+    Example:
+        hex_value = convert_int_to_hex(255)
+        print(hex_value)  # Outputs: '0xff'
+    """
+    return hex(integer)
+
+
+@tool
+def get_current_timestamp() -> int:
+    """
+    Get the current Unix timestamp.
+
+    Returns:
+        int: The current Unix timestamp.
+    """
+    return int(time.time())
+
+
+if __name__ == "__main__":
+    from datetime import datetime
+
+    timestamp = get_current_timestamp.invoke({})
+    current_time = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+    print(f"Current time: {current_time}")
+    assert convert_dec_to_hex.invoke({"integer": 11000}) == "0x2af8"

@@ -14,6 +14,9 @@ import requests
 from typing import List, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Field, validator
+from langchain_core.tools import tool
+
+from graph.tools import w3
 
 
 class TransactionParams(BaseModel):
@@ -64,26 +67,39 @@ class TransactionResult(BaseModel):
     asset_changes: List[AssetChange] = []
     error: str = ""
 
-    def __str__(self) -> str:
-        status = "successful" if not self.error else "failed"
-        transaction_info = [f"Transaction was {status}."]
-        # Add error if any
+    def pretty_print(self):
+        # Determine the transaction status
+        status = "Successful" if not self.error else "Failed"
+        print(f"Status: {status}")
+        # Append error message if exists
         if self.error:
-            transaction_info.append(self.error)
-        # Add information about each asset change
-        for asset_change in self.asset_changes:
-            is_sender = asset_change.sender.lower() == self.from_address.lower()
-            is_receiver = asset_change.receiver.lower() == self.from_address.lower()
+            print(f"Error: {self.error}")
 
+        from_address = self.from_address.lower()
+
+        # Process asset changes
+        for asset_change in self.asset_changes:
+            is_sender = asset_change.sender.lower() == from_address
+            is_receiver = asset_change.receiver.lower() == from_address
+
+            # Validate that sender and receiver are not the same
             if is_sender and is_receiver:
                 raise Exception("Sender and receiver shall not be the same")
 
-            outgoing_sign = "-" if is_sender else "+"
-            amount = int(asset_change.raw_amount, 16)
+            # Determine transaction sign and format message
+            outgoing_sign = "💸" if is_sender else "💰"
+            raw_amount_dec = int(asset_change.raw_amount, 16)
+            formatted_amount = "{:.18f}".format(
+                raw_amount_dec / 10**asset_change.decimals
+            )
             asset_type = asset_change.contract_address or "Native"
-            info_message = f"💰 {asset_change.symbol.upper()} ({asset_type}): {outgoing_sign}{amount:,} ({asset_change.raw_amount})"
-            transaction_info.append(info_message)
-        return "\n".join(transaction_info)
+            info_message = (
+                f"{outgoing_sign} {asset_change.symbol.upper()} ({asset_type})\n"
+                f"- Raw (Hex): {asset_change.raw_amount}\n"
+                f"- Raw (Dec): {raw_amount_dec:,}\n"
+                f"- Formatted: {formatted_amount}"
+            )
+            print(info_message)
 
 
 class SimulationResult(BaseModel):
@@ -103,13 +119,15 @@ class SimulationResult(BaseModel):
 
     def pretty_print(self):
         for i, tx_result in enumerate(self.tx_results):
-            print(f"#{i + 1}: {tx_result}")
+            print(f"#{i + 1}")
+            tx_result.pretty_print()
             print("-------------------------------------")
 
 
+@tool
 def simulate_transaction(transactions: List[TransactionParams]) -> SimulationResult:
     """
-    Simulate a transaction on Tenderly.
+    Simulate a list of transactions to retrieve the asset changes and statuses.
 
     Args:
         transactions (List[TransactionParams]): List of transactions to simulate.
@@ -193,9 +211,10 @@ def _format_simulation_result(sender: str, results: list[dict]) -> SimulationRes
                 name=asset["assetInfo"].get("name", ""),
                 symbol=asset["assetInfo"].get("symbol", ""),
                 decimals=asset["assetInfo"].get("decimals", 0),
-                raw_amount=asset["rawAmount"],
-                sender=asset["from"],
-                receiver=asset["to"],
+                raw_amount=asset.get("rawAmount", "0x0"),
+                # from may be empty in some cases. e.g., 'mint'
+                sender=asset.get("from", ""),
+                receiver=asset.get("to", ""),
                 contract_address=asset["assetInfo"].get("contractAddress", ""),
             )
             for asset in result.get("assetChanges", [])
@@ -229,9 +248,6 @@ if __name__ == "__main__":
     with open("abi/uniswap_v2_router.json") as file:
         uniswap_v2_router_abi = json.load(file)
 
-    INFURA_API_KEY = os.getenv("INFURA_API_KEY")
-    w3 = Web3(Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_API_KEY}"))
-
     usdc_contract = w3.eth.contract(abi=erc20_abi)
     uniswap_contract = w3.eth.contract(abi=uniswap_v2_router_abi)
 
@@ -252,26 +268,28 @@ if __name__ == "__main__":
         ],
     )
 
-    result = simulate_transaction(
-        [
-            TransactionParams(
-                from_address=dummy_from_address,
-                to_address=usdc_address,
-                data=approve_encoded_data,
-                value="0x0",
-            ),
-            TransactionParams(
-                from_address=dummy_from_address,
-                to_address=uniswap_v2_router_address,
-                data=swap_encoded_data,
-                value="0x0",
-            ),
-            TransactionParams(
-                from_address=dummy_from_address,
-                to_address=dummy_to_address,
-                data="0x",
-                value="0x7b",
-            ),
-        ]
+    result = simulate_transaction.invoke(
+        {
+            "transactions": [
+                TransactionParams(
+                    from_address=dummy_from_address,
+                    to_address=usdc_address,
+                    data=approve_encoded_data,
+                    value="0x0",
+                ),
+                TransactionParams(
+                    from_address=dummy_from_address,
+                    to_address=uniswap_v2_router_address,
+                    data=swap_encoded_data,
+                    value="0x0",
+                ),
+                TransactionParams(
+                    from_address=dummy_from_address,
+                    to_address=dummy_to_address,
+                    data="0x",
+                    value="0x7b",
+                ),
+            ]
+        }
     )
     result.pretty_print()
