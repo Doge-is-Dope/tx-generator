@@ -71,7 +71,7 @@ Important:
 system_prompt = "You are a blockchain expert specializing in EVM transactions."
 
 
-async def replan(state: PlanSimulateState):
+async def replan_step(state: PlanSimulateState):
     from_address = state["from_address"]
     steps = state["steps"]
 

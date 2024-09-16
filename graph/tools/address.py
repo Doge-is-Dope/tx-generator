@@ -87,6 +87,7 @@ def get_contract_address_by_name(contract_name: str) -> str:
         "aave": "0x7D2768dE32b0b80b7a3454c06BdAcB11eBBeaFb5",  # Aave Lending Pool
         "compound": "0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b",  # Compound Comptroller
         "lido": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",  # Lido Staked ETH
+        "eigenpie": "0x24db6717dB1C75B9Db6eA47164D8730B63875dB7",  # Eigenpie - https://app.bentobatch.com/case/eigenpie_steth
     }
 
     normalized_name = contract_name.lower()
