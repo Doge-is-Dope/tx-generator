@@ -13,54 +13,10 @@ import os
 import requests
 from typing import List, Optional
 
-from langchain_core.pydantic_v1 import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from langchain_core.tools import tool
 
-from graph.tools import w3
-
-
-class TransactionParams(BaseModel):
-    """
-    Parameters for a blockchain transaction.
-
-    Attributes:
-        from_address (str): Sender's address, must start with '0x' and be 42 characters long.
-        to_address (str): Recipient's address or contract address, must start with '0x' and be 42 characters long.
-        data (str): Transaction data in hexadecimal format, must start with '0x'.
-        value (str): Native token amount in hexadecimal format, must start with '0x'.
-
-    Validation:
-        - Addresses (`from_address`, `to_address`) must be valid hex strings starting with '0x' and 42 characters in length.
-        - `value` and `data` must start with '0x'.
-
-    Purpose:
-        Ensures correct formatting of transaction parameters before submission to the blockchain.
-    """
-
-    from_address: str = Field(description="The address of the sender (from)")
-    to_address: str = Field(description="The address being interacted with (to)")
-    data: str = Field("0x", description="Transaction data in hex, start with '0x'")
-    value: str = Field("0x0", description="Amount of native token to send, in hex")
-
-    @validator("from_address", "to_address")
-    def check_address_format(cls, v):
-        if not v.startswith("0x"):
-            raise ValueError("Address must start with '0x'")
-        if len(v) != 42:
-            raise ValueError("Address must be 42 characters long")
-        return v
-
-    @validator("value")
-    def check_value_format(cls, v):
-        if not v.startswith("0x"):
-            raise ValueError("Value must start with '0x'")
-        return v
-
-    @validator("data")
-    def check_data_format(cls, v):
-        if not v.startswith("0x"):
-            raise ValueError("Data must start with '0x'")
-        return v
+from models.tx_params import TransactionParams
 
 
 class AssetChange(BaseModel):
@@ -146,9 +102,9 @@ class SimulationResult(BaseModel):
     from_address: str  # The address that initiated the first transaction
     tx_results: List[TransactionResult]
 
-    @validator("tx_results")
+    @field_validator("tx_results")
     def check_from_address(cls, v, values):
-        from_address = values.get("from_address", "").lower()
+        from_address = values.data["from_address"].lower()
         if from_address:
             for tx in v:
                 if tx.from_address.lower() != from_address:
