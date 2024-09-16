@@ -14,6 +14,11 @@ _ABI_CACHE = {
     "erc20": None,
     "swap": None,
     "steth": None,  # stETH implementation contract
+    # USDT
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7": None,
+    "usdt": None,
+    # USDC
+    "usdc": None,
 }
 
 
@@ -30,14 +35,19 @@ def _load_abi_files():
             _ABI_CACHE["swap"] = json.load(file)
 
     # Load any other frequently used ABIs here
-    _ABI_CACHE["steth"] = _ABI_CACHE["erc20"]  # If stETH reuses ERC20 ABI
+    _ABI_CACHE["steth"] = _ABI_CACHE["erc20"]
+    # USDT
+    _ABI_CACHE["usdt"] = _ABI_CACHE["erc20"]
+    _ABI_CACHE["0xdAC17F958D2ee523a2206206994597C13D831ec7"] = _ABI_CACHE["erc20"]
+    # USDC
+    _ABI_CACHE["usdc"] = _ABI_CACHE["erc20"]
 
 
 _load_abi_files()  # Load the ABIs once when the module is loaded
 
 
 @tool
-def encode_function_call(abi: list, function_name: str, args: list) -> str:
+def encode_function_call(abi: list, function_name: str, arguments: list) -> str:
     """
     Encode a smart contract function call into ABI-encoded data.
 
@@ -47,7 +57,7 @@ def encode_function_call(abi: list, function_name: str, args: list) -> str:
     Args:
         abi (str): The ABI of the contract in JSON format.
         function_name (str): The name of the contract function to call (e.g., 'approve').
-        args (list): The arguments to the function as a list (e.g., [spender_address, amount]).
+        arguments (list): The arguments to the function as a list (e.g., [spender_address, amount]).
 
     Returns:
         str: The ABI-encoded data for the function call that can be used in a transaction.
@@ -56,7 +66,7 @@ def encode_function_call(abi: list, function_name: str, args: list) -> str:
         data = encode_function_call(abi, 'approve', ['0xUniswapContractAddress', 400])
     """
     contract = w3.eth.contract(abi=abi)
-    return contract.encode_abi(function_name, args)
+    return contract.encode_abi(function_name, arguments)
 
 
 @tool

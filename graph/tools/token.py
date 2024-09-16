@@ -1,6 +1,7 @@
 from langchain_core.tools import tool
 
 from graph.tools.abi import fetch_contract_abi
+from graph.tools.address import convert_to_checksum_address
 from graph.tools import w3
 
 
@@ -21,7 +22,7 @@ def get_token_info(token_address: str) -> dict:
     """
     # Create the contract object
     contract = w3.eth.contract(
-        address=token_address,
+        address=convert_to_checksum_address.invoke(token_address),
         abi=fetch_contract_abi.invoke(
             {"contract_address": token_address, "contract_type": "erc20"}
         ),

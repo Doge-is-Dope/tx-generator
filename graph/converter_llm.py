@@ -69,7 +69,8 @@ workflow.set_finish_point("converter")
 app = workflow.compile()
 
 
-system_prompt = """Interpret the provided description to generate Ethereum transaction parameters using the following tools:
+system_prompt = """
+Interpret the provided description to generate Ethereum transaction parameters using the following tools:
 -------------
 - fetch_contract_abi: Retrieve the ABI for a contract by address or function name.
 - get_contract_address_by_name: Get a contract address using a protocol or token name.
@@ -79,11 +80,12 @@ system_prompt = """Interpret the provided description to generate Ethereum trans
 - get_token_info: Retrieve token details (name, symbol, decimals) by address.
 - convert_to_smallest_unit: Convert a token amount to its smallest unit (e.g., wei) based on decimals.
 - convert_dec_to_hex: Convert a decimal integer to a hexadecimal string.
-- get_current_timestamp: Get the current timestamp in seconds.
+- get_current_timestamp: Get the current timestamp in seconds. Use this tool to set transaction deadlines or for time-sensitive operations.
 -------------
 Once you have the transaction encoded data, return the transaction parameters (from, to, data, value). 
 Sender Address: {from_address}
-Current Time: {current_time}"""
+Current Time: {current_time}
+"""
 
 
 async def generate_tx_params(description: str, from_address: str) -> TransactionParams:

@@ -3,50 +3,17 @@ from typing import Literal
 from datetime import datetime
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.pydantic_v1 import BaseModel, Field, validator
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.prebuilt import ToolNode
 
+
 from graph.tools import tools
+from models.tx_params import TransactionParams
 
 # Set up tracing
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_PROJECT"] = "converter"
-
-
-class TransactionParams(BaseModel):
-    """
-    Convert the final result into transaction parameters.
-    """
-
-    from_address: str = Field(description="The address of the sender (from)")
-    to_address: str = Field(description="The address being interacted with (to)")
-    data: str = Field("0x", description="Transaction data in hex, start with '0x'")
-    value: str = Field("0x0", description="Amount of native token to send, in hex")
-
-    @validator("from_address", "to_address")
-    def check_address_format(cls, v):
-        if not v.startswith("0x"):
-            raise ValueError("Address must start with '0x'")
-        if len(v) != 42:
-            raise ValueError("Address must be 42 characters long")
-        return v
-
-    @validator("value")
-    def check_value_format(cls, v):
-        if not v.startswith("0x"):
-            raise ValueError("Value must start with '0x'")
-        return v
-
-    @validator("data")
-    def check_data_format(cls, v):
-        if not v.startswith("0x"):
-            raise ValueError("Data must start with '0x'")
-        return v
-
-    def __str__(self):
-        return f"From: {self.from_address}\nTo: {self.to_address}\nData: {self.data}\nValue: {self.value}"
 
 
 tools = tools + [TransactionParams]
@@ -107,7 +74,8 @@ workflow.set_finish_point("converter")
 app = workflow.compile()
 
 
-system_prompt = """Interpret the provided description to generate Ethereum transaction parameters using the following tools:
+system_prompt = """
+Interpret the provided description to generate Ethereum transaction parameters using the following tools:
 -------------
 - fetch_contract_abi: Retrieve the ABI for a contract by address or function name.
 - get_contract_address_by_name: Get a contract address using a protocol or token name.
@@ -117,11 +85,12 @@ system_prompt = """Interpret the provided description to generate Ethereum trans
 - get_token_info: Retrieve token details (name, symbol, decimals) by address.
 - convert_to_smallest_unit: Convert a token amount to its smallest unit (e.g., wei) based on decimals.
 - convert_dec_to_hex: Convert a decimal integer to a hexadecimal string.
-- get_current_timestamp: Get the current timestamp in seconds.
+- get_current_timestamp: Get the current Unix timestamp in seconds. Use this tool to set transaction deadlines or for time-sensitive operations.
 -------------
-Once you have the transaction encoded data (using tool 'encode_function_call'), finalize by using `convert_to_tx_params` to create a TransactionParams object and return it.
+Once you have the transaction encoded data (using tool 'encode_function_call'), finalize by using `TransactionParams` to create an object and return it.
 Sender address: {from_address}
-Current time: {current_time}"""
+Current time: {current_time}
+"""
 
 
 async def generate_tx_params(description: str, from_address: str) -> TransactionParams:
