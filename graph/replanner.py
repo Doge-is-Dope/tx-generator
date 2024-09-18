@@ -1,9 +1,9 @@
 import os
-from typing import List
+from typing import List, Union
 from decimal import Decimal
 
 import asyncio
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
@@ -48,10 +48,12 @@ user_prompt = """
 Your task is to update the next steps based on the simulated transactions.
 
 Context:
-- User's address: {from_address}
+- User's address: 
+{from_address}
 - Simulated transactions: 
 {simulated_txs}
-- Next steps: {remaining_steps}
+- Next steps: 
+{remaining_steps}
 
 Instructions:
 1. Review the simulated transactions and determine if any changes are needed in the next steps.
@@ -70,31 +72,27 @@ Important:
 
 system_prompt = "You are a blockchain expert specializing in EVM transactions."
 
+# Create the prompt
+prompt = ChatPromptTemplate.from_messages(
+    [("system", system_prompt), ("user", user_prompt)]
+)
+model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+replanner = RunnablePassthrough() | prompt | model.with_structured_output(Plan)
+
 
 async def replan_step(state: PlanSimulateState):
     from_address = state["from_address"]
     steps = state["steps"]
-
     # Build the simulated transactions list
     simulated_txs = await _build_simulated_txs(state["simulated_txs"], from_address)
-
-    # Create the prompt
-    prompt = ChatPromptTemplate.from_messages(
-        [("system", system_prompt), ("user", user_prompt)]
-    )
-    model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-    chain = RunnablePassthrough() | prompt | model.with_structured_output(Plan)
-
     # Run the chain and await the response
-    response = await chain.ainvoke(
+    response = await replanner.ainvoke(
         {
             "from_address": from_address,
             "simulated_txs": "\n".join(simulated_txs),
             "remaining_steps": steps,
         }
     )
-
-    # Return the response
     return {"steps": response.steps}
 
 
