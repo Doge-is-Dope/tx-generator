@@ -1,6 +1,6 @@
 import os
+import time
 from typing import Literal
-from datetime import datetime
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
@@ -95,7 +95,7 @@ Current time: {current_time}
 
 async def generate_tx_params(description: str, from_address: str) -> TransactionParams:
     system_message = SystemMessage(
-        system_prompt.format(from_address=from_address, current_time=datetime.now())
+        system_prompt.format(from_address=from_address, current_time=int(time.time()))
     )
     input = {"messages": [system_message, HumanMessage(description)]}
     result = await app.ainvoke(input)

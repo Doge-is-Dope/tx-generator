@@ -9,16 +9,13 @@ from langchain_core.tools import tool
 from graph.tools import w3
 from graph.tools.address import convert_to_checksum_address
 
+etherscan_api_key = os.getenv("ETHERSCAN_API_KEY")
+etherscan_base_url = "https://api.etherscan.io/api"
+
 # Global cache for ABIs
 _ABI_CACHE = {
     "erc20": None,
     "swap": None,
-    "steth": None,  # stETH implementation contract
-    # USDT
-    "0xdAC17F958D2ee523a2206206994597C13D831ec7": None,
-    "usdt": None,
-    # USDC
-    "usdc": None,
 }
 
 
@@ -36,14 +33,17 @@ def _load_abi_files():
 
     # Load any other frequently used ABIs here
     _ABI_CACHE["steth"] = _ABI_CACHE["erc20"]
+    _ABI_CACHE["0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84"] = _ABI_CACHE["erc20"]
     # USDT
     _ABI_CACHE["usdt"] = _ABI_CACHE["erc20"]
     _ABI_CACHE["0xdAC17F958D2ee523a2206206994597C13D831ec7"] = _ABI_CACHE["erc20"]
     # USDC
     _ABI_CACHE["usdc"] = _ABI_CACHE["erc20"]
+    _ABI_CACHE["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"] = _ABI_CACHE["erc20"]
 
 
-_load_abi_files()  # Load the ABIs once when the module is loaded
+# Load the ABIs once when the module is loaded
+_load_abi_files()
 
 
 @tool
@@ -173,10 +173,8 @@ def _extract_function_abi(abi: list, function_name: str) -> Optional[List]:
 
 
 @lru_cache
-def _fetch_abi_from_etherscan(address: str) -> dict:
+def _get_abi_from_etherscan(address: str) -> dict:
     # print(f"Fetching ABI from Etherscan for address: {address}")
-    etherscan_api_key = os.getenv("ETHERSCAN_API_KEY")
-    etherscan_base_url = "https://api.etherscan.io/api"
     api_url = f"{etherscan_base_url}?module=contract&action=getabi&address={address}&apikey={etherscan_api_key}"
     response = requests.get(api_url)
     data = response.json()
@@ -184,6 +182,15 @@ def _fetch_abi_from_etherscan(address: str) -> dict:
         return json.loads(data["result"])
     else:
         raise ValueError(f"ABI not found: {data['result']}")
+
+
+@lru_cache
+def _get_implementation_from_etherscan(address: str) -> Optional[str]:
+    """Get the implementation address from the proxy contract address. Returns empty string if not found."""
+    url = f"{etherscan_base_url}?module=contract&action=getsourcecode&address={address}&apikey={etherscan_api_key}"
+    response = requests.get(url).json()
+    impl_address = response["result"][0]["Implementation"]
+    return w3.to_checksum_address(impl_address) if impl_address else None
 
 
 @lru_cache
@@ -204,38 +211,19 @@ def _fetch_abi_from_remote(
         str: The contract ABI or function ABI.
     """
     current_address = contract_address
-
     for _ in range(max_redirects):
-        # Fetch ABI from Etherscan
-        abi = _fetch_abi_from_etherscan(current_address)
-
-        # Check if the contract is a proxy contract
-        if _extract_function_abi(abi, "implementation"):
-            # print(f"Proxy contract detected at {current_address}")
-            try:
-                checksum_address = convert_to_checksum_address.invoke(current_address)
-
-                # Try fetching cached ABI
-                cached_abi = _fetch_cached_abi(contract_address=checksum_address)
-                if cached_abi:
-                    abi = cached_abi
-                else:
-                    # Fetch the implementation address via the contract call
-                    implementation_address = (
-                        w3.eth.contract(address=checksum_address, abi=abi)
-                        .functions.implementation()
-                        .call()
-                    )
-                    # print(f"Implementation address: {implementation_address}")
-                    current_address = implementation_address
-            except ValueError as e:  # Catch more specific errors like ValueError
-                # print(f"Error fetching implementation address: {e}")
-                break  # Exit if there's an error in fetching the implementation address
+        print(f"Checking for proxy at {current_address}")
+        impl_address = _get_implementation_from_etherscan(current_address)
+        if impl_address:
+            print(f"Proxy found, redirecting to {impl_address}")
+            current_address = impl_address
+            continue
         else:
-            # print("Not a proxy contract, returning the ABI")
-            break  # Exit loop if no "implementation" function found (non-proxy contract)
+            print(f"No proxy found, fetching ABI for {current_address}")
+            abi = _get_abi_from_etherscan(current_address)
+            break
 
+    # If a specific function name is requested, filter the ABI
     if function_name:
         return _extract_function_abi(abi, function_name) or abi
-
     return abi

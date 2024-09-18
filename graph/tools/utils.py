@@ -1,5 +1,3 @@
-import time
-
 from langchain_core.tools import tool
 
 
@@ -21,21 +19,5 @@ def convert_dec_to_hex(integer: int) -> str:
     return hex(integer)
 
 
-@tool
-def get_current_timestamp() -> int:
-    """
-    Get the current Unix timestamp.
-
-    Returns:
-        int: The current Unix timestamp.
-    """
-    return int(time.time())
-
-
 if __name__ == "__main__":
-    from datetime import datetime
-
-    timestamp = get_current_timestamp.invoke({})
-    current_time = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
-    print(f"Current time: {current_time}")
     assert convert_dec_to_hex.invoke({"integer": 11000}) == "0x2af8"

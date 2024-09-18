@@ -12,7 +12,8 @@ from graph.tools.address import (
     convert_to_checksum_address,
 )
 from graph.tools.token import get_token_info, convert_to_smallest_unit
-from graph.tools.utils import convert_dec_to_hex, get_current_timestamp
+from graph.tools.time import get_current_timestamp, get_deadline
+from graph.tools.utils import convert_dec_to_hex
 
 tools = [
     fetch_contract_abi,
@@ -24,4 +25,5 @@ tools = [
     convert_to_smallest_unit,
     convert_dec_to_hex,
     get_current_timestamp,
+    get_deadline,
 ]
