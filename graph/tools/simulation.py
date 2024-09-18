@@ -109,7 +109,7 @@ class SimulationResult(BaseModel):
             for tx in v:
                 if tx.from_address.lower() != from_address:
                     raise ValueError(
-                        f"From address mismatch: expected {from_address}, got {tx.from_address}"
+                        f"From address mismatch: expected {tx.from_address}, got {from_address}"
                     )
         return v
 

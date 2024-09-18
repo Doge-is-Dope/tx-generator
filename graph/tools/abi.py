@@ -32,6 +32,8 @@ def _load_abi_files():
             _ABI_CACHE["swap"] = json.load(file)
 
     # Load any other frequently used ABIs here
+    _ABI_CACHE["0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"] = _ABI_CACHE["swap"]
+
     _ABI_CACHE["steth"] = _ABI_CACHE["erc20"]
     _ABI_CACHE["0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84"] = _ABI_CACHE["erc20"]
     # USDT
