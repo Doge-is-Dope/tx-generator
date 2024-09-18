@@ -12,8 +12,8 @@ class PlanSimulateState(TypedDict):
     steps: List[str]
     # The current step (description, transaction_params)
     current_step: Tuple[str, TransactionParams]
-    # The error from the simulation result
-    tx_error: str
+    # Error generated during the process, such as from simulation results.
+    error: str
     # List of transactions that have been successfully simulated; each tuple contains (description, transaction_params, asset_changes)
     simulated_txs: Annotated[List[Tuple[str, TransactionParams, List]], operator.add]
     # The final response.

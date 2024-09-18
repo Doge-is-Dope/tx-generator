@@ -174,7 +174,7 @@ def _extract_function_abi(abi: list, function_name: str) -> Optional[List]:
 
 @lru_cache
 def _fetch_abi_from_etherscan(address: str) -> dict:
-    print(f"Fetching ABI from Etherscan for address: {address}")
+    # print(f"Fetching ABI from Etherscan for address: {address}")
     etherscan_api_key = os.getenv("ETHERSCAN_API_KEY")
     etherscan_base_url = "https://api.etherscan.io/api"
     api_url = f"{etherscan_base_url}?module=contract&action=getabi&address={address}&apikey={etherscan_api_key}"
@@ -211,7 +211,7 @@ def _fetch_abi_from_remote(
 
         # Check if the contract is a proxy contract
         if _extract_function_abi(abi, "implementation"):
-            print(f"Proxy contract detected at {current_address}")
+            # print(f"Proxy contract detected at {current_address}")
             try:
                 checksum_address = convert_to_checksum_address.invoke(current_address)
 
@@ -226,13 +226,13 @@ def _fetch_abi_from_remote(
                         .functions.implementation()
                         .call()
                     )
-                    print(f"Implementation address: {implementation_address}")
+                    # print(f"Implementation address: {implementation_address}")
                     current_address = implementation_address
             except ValueError as e:  # Catch more specific errors like ValueError
-                print(f"Error fetching implementation address: {e}")
+                # print(f"Error fetching implementation address: {e}")
                 break  # Exit if there's an error in fetching the implementation address
         else:
-            print("Not a proxy contract, returning the ABI")
+            # print("Not a proxy contract, returning the ABI")
             break  # Exit loop if no "implementation" function found (non-proxy contract)
 
     if function_name:
