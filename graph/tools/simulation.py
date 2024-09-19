@@ -121,6 +121,19 @@ class SimulationResult(BaseModel):
             print("-" * 40)
 
 
+class SimulationError(Exception):
+    """
+    Error raised when simulation fails.
+
+    Attributes:
+        message (str): The error message.
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
 @tool
 def simulate_transaction(transactions: List[TransactionParams]) -> SimulationResult:
     """
@@ -154,11 +167,12 @@ def simulate_transaction(transactions: List[TransactionParams]) -> SimulationRes
     response = requests.post(url, json=data).json()
 
     if "error" in response:
-        raise Exception(f"Simulation API error: {response['error']['message']}")
+        print(response)
+        raise SimulationError(response["error"]["message"])
     if "result" in response:
         sender = transactions[0].from_address
         return _format_simulation_result(sender, response["result"])
-    raise Exception(f"Unexpected response: {response}")
+    raise SimulationError(f"Unexpected response: {response}")
 
 
 def _extract_error_from_trace(trace_list: list[dict]) -> str:

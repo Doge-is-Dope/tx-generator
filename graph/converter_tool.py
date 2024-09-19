@@ -71,7 +71,7 @@ workflow.add_conditional_edges(
 workflow.add_edge("tools", "agent")
 workflow.set_finish_point("converter")
 
-app = workflow.compile()
+converter = workflow.compile()
 
 
 system_prompt = """
@@ -98,5 +98,6 @@ async def generate_tx_params(description: str, from_address: str) -> Transaction
         system_prompt.format(from_address=from_address, current_time=int(time.time()))
     )
     input = {"messages": [system_message, HumanMessage(description)]}
-    result = await app.ainvoke(input)
+    result = await converter.ainvoke(input)
+    print(f"generate_tx_params result: {result}")
     return result["response"]
