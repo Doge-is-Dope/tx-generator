@@ -99,5 +99,5 @@ async def generate_tx_params(description: str, from_address: str) -> Transaction
     )
     input = {"messages": [system_message, HumanMessage(description)]}
     result = await converter.ainvoke(input)
-    print(f"generate_tx_params result: {result}")
+    # print(f"generate_tx_params result: {result}")
     return result["response"]
