@@ -76,7 +76,7 @@ system_prompt = "You are a blockchain expert specializing in EVM transactions."
 prompt = ChatPromptTemplate.from_messages(
     [("system", system_prompt), ("user", user_prompt)]
 )
-model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+model = ChatOpenAI(model="gpt-4o", temperature=0)
 replanner = RunnablePassthrough() | prompt | model.with_structured_output(Plan)
 
 

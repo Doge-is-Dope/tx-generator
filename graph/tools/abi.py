@@ -214,14 +214,14 @@ def _fetch_abi_from_remote(
     """
     current_address = contract_address
     for _ in range(max_redirects):
-        print(f"Checking for proxy at {current_address}")
+        # print(f"Checking for proxy at {current_address}")
         impl_address = _get_implementation_from_etherscan(current_address)
         if impl_address:
-            print(f"Proxy found, redirecting to {impl_address}")
+            # print(f"Proxy found, redirecting to {impl_address}")
             current_address = impl_address
             continue
         else:
-            print(f"No proxy found, fetching ABI for {current_address}")
+            # print(f"No proxy found, fetching ABI for {current_address}")
             abi = _get_abi_from_etherscan(current_address)
             break
 
