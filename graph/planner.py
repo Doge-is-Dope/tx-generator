@@ -44,7 +44,7 @@ planner_prompt = ChatPromptTemplate.from_messages(
     [("system", system_prompt), ("user", user_prompt)]
 )
 
-planner_model = ChatOpenAI(model="gpt-4o-2024-08-06", temperature=0)
+planner_model = ChatOpenAI(model="gpt-4o", temperature=0)
 
 planner = (
     {"context": retriever | format_docs, "description": RunnablePassthrough()}
