@@ -17,7 +17,7 @@ os.environ["LANGCHAIN_PROJECT"] = "converter"
 
 
 tools = tools + [TransactionParams]
-model = ChatOpenAI(model="gpt-4o-2024-08-06", temperature=0)
+model = ChatOpenAI(model="gpt-4o", temperature=0)
 model_with_tools = model.bind_tools(tools)
 
 
@@ -77,16 +77,17 @@ converter = workflow.compile()
 system_prompt = """
 Interpret the provided description to generate Ethereum transaction parameters using the following tools:
 -------------
-- fetch_contract_abi: Retrieve the ABI for a contract by address or function name.
-- get_contract_address_by_name: Get a contract address using a protocol or token name.
-- resolve_ens: Convert an ENS domain to an Ethereum address.
-- convert_to_checksum_address: Format an Ethereum address to checksum format.
-- encode_function_call: Encode a function call and its arguments using the ABI.
-- get_token_info: Retrieve token details (name, symbol, decimals) by address.
-- convert_to_smallest_unit: Convert a token amount to its smallest unit (e.g., wei) based on decimals.
-- convert_dec_to_hex: Convert a decimal integer to a hexadecimal string.
-- get_current_timestamp: Get the current Unix timestamp in seconds. Use this tool to set transaction deadlines or for time-sensitive operations.
+- fetch_contract_abi: Retrieve the ABI for a contract by contract address or protocol name. If function name is provided, only the ABI for that function is returned.
+- get_contract_address_by_name: Retrieve a contract address using a protocol or token name.
+- resolve_ens: Convert an ENS domain into its corresponding Ethereum address. Only use this when it's a valid ENS domain.
+- convert_to_checksum_address: Format an Ethereum address into checksum format.
+- encode_function_call: Encode a function call and its arguments using the contract ABI.
+- get_token_info: Retrieve token details such as name, symbol, and decimals by the contract address.
+- convert_to_smallest_unit: Convert a token amount to its smallest unit based on the token's decimals.
+- convert_dec_to_hex: Convert a decimal integer into its hexadecimal representation.
+- get_current_timestamp: Retrieve the current timestamp in seconds to set transaction deadlines or manage time-sensitive operations.
 -------------
+When handling amounts, NEVER round or alter values like 0.299999999999999997; ALWAYS maintain the exact precision given.
 Once you have the transaction encoded data (using tool 'encode_function_call'), finalize by using `TransactionParams` to create an object and return it.
 Sender address: {from_address}
 Current time: {current_time}

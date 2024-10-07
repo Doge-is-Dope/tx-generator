@@ -164,7 +164,7 @@ def simulate_transaction(transactions: List[TransactionParams]) -> SimulationRes
             "latest",
         ],
     }
-    print(data)
+    # print(data) # TODO: Logger
     response = requests.post(url, json=data).json()
 
     if "error" in response:

@@ -42,19 +42,23 @@ def get_token_info(token_address: str) -> dict:
 
 
 @tool
-def convert_to_smallest_unit(amount: float, decimals: int) -> int:
+def convert_to_smallest_unit(amount: str, decimals: int) -> int:
     """
-    Convert a human-readable token amount to its smallest unit (wei-like amount).
+    Convert a token amount to its smallest unit (wei-like amount), preserving precision.
 
     Args:
-        amount (float): The human-readable token amount (e.g., 400 for 400 stETH).
+        amount (float): The amount to convert as a string to preserve precision.
         decimals (int): The number of decimals the token uses (e.g., 18 for stETH).
 
     Returns:
         int: The token amount in the smallest unit (e.g., wei for stETH).
 
     Example:
-        token_amount = convert_to_token_amount(10.01, 18)
-        print(token_amount)  # Outputs: 10.01 * (10 ** 18)
+        token_amount = convert_to_token_amount('0.299999999999999997', 18)
+        print(token_amount)  # Outputs: 299999999999999997
     """
-    return int(amount * (10**decimals))
+    from decimal import Decimal
+
+    amount_decimal = Decimal(amount)
+
+    return int(amount_decimal * (10**decimals))

@@ -68,6 +68,10 @@ def encode_function_call(abi: list, function_name: str, arguments: list) -> str:
         data = encode_function_call(abi, 'approve', ['0xUniswapContractAddress', 400])
     """
     contract = w3.eth.contract(abi=abi)
+    # Convert any addresses in the arguments to checksum format
+    for i, arg in enumerate(arguments):
+        if w3.is_address(arg):
+            arguments[i] = convert_to_checksum_address.invoke(arg)
     return contract.encode_abi(function_name, arguments)
 
 

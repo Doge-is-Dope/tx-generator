@@ -9,6 +9,7 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
 
 from graph.state import PlanSimulateState
+from graph.tools.simulation import AssetChange
 
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
@@ -45,29 +46,30 @@ class Plan(BaseModel):
 
 
 user_prompt = """
-Your task is to update the next steps based on the simulated transactions.
+Your task is to refine the next steps based on the provided simulated transactions.
 
-Context:
-- User's address: 
+User's address (from): 
 {from_address}
-- Simulated transactions: 
+
+Simulated transactions: 
 {simulated_txs}
-- Next steps: 
+
+Next steps: 
 {remaining_steps}
 
 Instructions:
-1. Review the simulated transactions and determine if any changes are needed in the next steps.
-2. Update steps with relevant details from the simulations, such as token amounts or addresses.
-3. Return the revised plan, reflecting only the necessary updates.
+1. Compare the simulated transactions with the next steps.
+2. Update the next steps using relevant details from the simulations, such as token amounts or addresses.
+3. Return the updated next steps.
 
-Example:
-If the step is "Approve USDC for Uniswap" and the simulation confirms a token amount:
-- Extract the amount from the simulation result. e.g., Received {{amount_string}} USDC.
-- Update the step. e.g., "Approve {{amount_string}} USDC for Uniswap."
+Example Adjustments:
+If the next step is "Swap USDC to USDT on Uniswap", 
+extract the amount from the simulation result (e.g., "Received {{amount_string}} USDC") and modify the next steps 
+(e.g., "Swap {{amount_string}} USDC to USDT on Uniswap").
 
-Important:
-- Only modify steps that are still pending.
-- Do not include completed or simulated steps.
+Important Guidelines:
+- Only update the details of the next steps.
+- Do not add or remove any steps.
 """
 
 system_prompt = "You are a blockchain expert specializing in EVM transactions."
@@ -101,25 +103,28 @@ async def _build_simulated_txs(simulated_txs_data, from_address):
 
     # Process each simulated transaction
     for index, (desc, _, asset_changes) in enumerate(simulated_txs_data, 1):
-        simulated_txs.append(f"{index}. {desc}")
-
+        tx = f"{index}. {desc}"
         # Concurrently resolve asset changes
-        tx_lines = await asyncio.gather(
+        asset_changes_lines = await asyncio.gather(
             *[_process_asset_change(asset, from_address) for asset in asset_changes]
         )
-        simulated_txs.extend(tx_lines)
-        simulated_txs.append("")  # Empty line for spacing
-
+        # print(f"asset changes: {asset_changes_lines}")
+        if asset_changes_lines:
+            tx += f" ({', '.join(asset_changes_lines)})"
+        simulated_txs.append(tx)
+    # print(f"simulated_txs: {simulated_txs}")
     return simulated_txs
 
 
-async def _process_asset_change(asset, from_address) -> str:
+async def _process_asset_change(asset: AssetChange, from_address) -> str:
     # Convert the amount asynchronously
     amount = convert_hex_amount_to_decimal(asset.raw_amount, asset.decimals)
 
     # Determine whether the asset was sent or received
-    if asset.sender == from_address:
-        return f"  - Sent {amount} {asset.symbol}"
-    elif asset.receiver == from_address:
-        return f"  - Received {amount} {asset.symbol}"
-    return ""
+    if asset.sender.lower() == from_address.lower():
+        return f"Sent {amount} {asset.symbol}"
+    elif asset.receiver.lower() == from_address.lower():
+        return f"Received {amount} {asset.symbol}"
+    else:
+        print(f"asset not sent or received: {asset}")
+        return ""

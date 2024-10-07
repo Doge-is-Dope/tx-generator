@@ -41,7 +41,7 @@ def convert_to_checksum_address(address: str) -> str:
 @tool
 def resolve_ens(name: str) -> str:
     """
-    Resolve the ENS name to an Ethereum address.
+    Resolve the ENS domain name (e.g. "uniswap.eth") to an Ethereum address.
 
     Args:
         name (str): The ENS name to resolve.
@@ -50,7 +50,7 @@ def resolve_ens(name: str) -> str:
         str: The Ethereum address if found, or an empty string.
     """
     if not name.endswith(".eth"):
-        name = f"{name}.eth"
+        raise ValueError(f"Not a valid ENS domain")
     return _resolve_ens(name)
 
 
@@ -58,13 +58,13 @@ import difflib
 
 
 @tool
-def get_contract_address_by_name(contract_name: str) -> str:
+def get_contract_address_by_name(name: str) -> str:
     """
     Retrieve the contract address for a given token or protocol by name.
     If the name is not found, it returns an empty string.
 
     Args:
-        contract_name (str): The name of the token or protocol (e.g., 'stETH', 'Uniswap V2 Router').
+        name (str): The name of the token or protocol (e.g., 'stETH', 'Uniswap V2 Router').
 
     Returns:
         str: The corresponding contract address if found, otherwise an empty string.
@@ -90,7 +90,7 @@ def get_contract_address_by_name(contract_name: str) -> str:
         "eigenpie": "0x24db6717dB1C75B9Db6eA47164D8730B63875dB7",  # Eigenpie - https://app.bentobatch.com/case/eigenpie_steth
     }
 
-    normalized_name = contract_name.lower()
+    normalized_name = name.lower()
 
     # Look for exact match first
     address = addresses.get(normalized_name)
@@ -115,7 +115,7 @@ def get_contract_address_by_name(contract_name: str) -> str:
         return address
 
     # Raise an error if the address is not found in either the cache or external resource
-    raise ValueError(f"Contract address not found for name: {contract_name}")
+    raise ValueError(f"Contract address not found for name: {name}")
 
 
 def _query_contract_address(name: str) -> str:
