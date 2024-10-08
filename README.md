@@ -4,7 +4,7 @@ This AI agent is designed to convert natural language prompts into a sequence of
 
 As of `September 18, 2024`, it can accurately generate a multi-step batch transaction from a simple description in under 1 minute.
 
-## Demo
+### Demo
 
 #### Input
 
@@ -59,7 +59,43 @@ Transaction Summary:
 --------------------------------------------------
 ```
 
-## Set up
+### Workflow
+
+![workflow](./assets/workflow.jpg)
+
+1. **Planner: Convert User Intent into Concrete Steps**
+
+   - Input: Natural language prompt (e.g., "Stake 0.03 ETH with Lido and deposit to Eigenpie.")
+   - Task: Translate the user’s intent into concrete steps.
+   - Output: List of steps (e.g., "Stake 0.03 ETH to Lido", "Approve stETH to Eigenpie", "Stake stETH to Eigenpie")
+
+2. **Converter: Convert Steps into Transaction Parameters**
+
+   - Input: Each step from the previous phase (e.g., "Stake 0.03 ETH to Lido")
+   - Task: For each step, convert it into appropriate transaction parameters.
+   - Output: Transaction parameters for each step.
+
+3. **Simulator: Simulate Transactions**
+
+   - Input: Transaction parameters for each step.
+   - Task: Simulate the transaction to ensure feasibility.
+   - Output: Simulation results, including whether the step succeeded or failed, and any necessary adjustments.
+
+4. **Replanner: Refine & Update Steps**
+
+   - Input: Results from simulation
+   - Task: Refine each step as needed based on the simulation results.
+     - If the simulation fails (e.g., invalid parameters), adjust the parameters.
+     - If the step passes simulation, mark it as successful.
+   - Output: Updated steps, ready to be presented to the user.
+
+5. **Return Results to User**
+
+   - Input: Finalized steps.
+   - Task: Return the list of steps and their associated transaction parameters to the user.
+   - Output: A object containing the steps and their associated transaction details.
+
+### Set up
 
 Create a `.env` file in the root directory of the project and add the following environment variables:
 
@@ -70,44 +106,3 @@ LANGCHAIN_API_KEY=
 # AI providers
 OPENAI_API_KEY=
 ```
-
-## Workflow
-
-1. **Receive User Intent**
-
-   - Input: Natural language prompt (e.g., "Stake 0.03 ETH with Lido and deposit to Eigenpie.")
-   - Task: Translate the user’s intent into concrete steps.
-   - Output: List of steps (e.g., "Stake 0.03 ETH to Lido", "Approve stETH to Eigenpie", "Stake stETH to Eigenpie")
-
-2. **Convert & Simulate Transactions (Per Step)**
-
-   - Input: Each step from the previous phase (e.g., "Stake 0.03 ETH to Lido")
-   - Task: For each step, convert it into appropriate transaction parameters and simulate the transaction to ensure feasibility.
-   - Output: Simulated results, including whether the step succeeded or failed, and any necessary adjustments.
-
-3. **Refine & Update Steps**
-
-   - Input: Results from simulation
-   - Task: Refine each step as needed based on the simulation results.
-     - If the simulation fails (e.g., invalid parameters), adjust the parameters.
-     - If the step passes simulation, mark it as successful.
-   - Output: Updated steps, ready to be presented to the user.
-
-4. **Return Results to User**
-
-   - Input: Finalized steps.
-   - Task: Return the list of steps and their associated transaction parameters to the user.
-   - Output: A object containing the steps and their associated transaction details.
-
-## Data processing
-
-All of the processed data is stored in the `data` folder.
-
-- `data/raw`: Raw data from Bento Batch. i.e. source code.
-
-## Implemented tools
-
-- `abi/fetch_contract_abi`: Fetch the ABI of a contract
-- `address/convert_to_checksum_address`: Convert an address to a checksum address
-- `address/resolve_ens`: Resolve an ENS name to an address
-- `address/get_contract_address_by_name`: Get the contract address by name
