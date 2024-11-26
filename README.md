@@ -1,6 +1,6 @@
-# AI Agent for Translating Natural Language into Blockchain Transactions
+# Multi-agent system for Translating Natural Language into Blockchain Transactions
 
-This AI agent is designed to convert natural language prompts into a sequence of transactions with precision and efficiency.
+This system leverages multiple AI agents to seamlessly translate natural language prompts into precise and efficient sequences of blockchain transactions.
 
 As of `September 18, 2024`, it can accurately generate a multi-step batch transaction from a simple description in under 1 minute.
 
